@@ -46,3 +46,6 @@ feature-*/build/
 # Runtime state
 /data/
 
+# Test results
+test-result/
+

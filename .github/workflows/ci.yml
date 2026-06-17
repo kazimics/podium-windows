@@ -19,6 +19,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install VLC
+        run: winget install VideoLAN.VLC --accept-source-agreements --accept-package-agreements
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
@@ -26,7 +29,7 @@ jobs:
         run: chmod +x gradlew || true
 
       - name: Run unit tests
-        run: ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.VlcjMediaPlayerTest" --tests "app.podiumpodcasts.podium.desktop.ExportManagerTest" --tests "app.podiumpodcasts.podium.desktop.PodcastManagerTest" --tests "app.podiumpodcasts.podium.desktop.DownloadManagerTest"
+        run: ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.VlcjMediaPlayerTest" --tests "app.podiumpodcasts.podium.desktop.ExportManagerTest" --tests "app.podiumpodcasts.podium.desktop.PodcastManagerTest" --tests "app.podiumpodcasts.podium.desktop.DownloadManagerTest" --tests "app.podiumpodcasts.podium.desktop.ImportManagerTest" --tests "app.podiumpodcasts.podium.desktop.MediaPlayerStateTest"
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -46,6 +49,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Install VLC
+        run: winget install VideoLAN.VLC --accept-source-agreements --accept-package-agreements
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4

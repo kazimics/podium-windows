@@ -1,92 +1,112 @@
 package app.podiumpodcasts.podium.desktop
 
 import app.podiumpodcasts.podium.desktop.player.VlcjMediaPlayer
+import org.junit.Assume
 import kotlin.test.*
 
 class VlcjMediaPlayerTest {
 
-    private lateinit var player: VlcjMediaPlayer
+    private var player: VlcjMediaPlayer? = null
+    private var vlcAvailable = false
 
     @BeforeTest
     fun setup() {
-        player = VlcjMediaPlayer()
+        try {
+            player = VlcjMediaPlayer()
+            vlcAvailable = true
+        } catch (e: Exception) {
+            vlcAvailable = false
+        }
     }
 
     @AfterTest
     fun teardown() {
         try {
-            player.release()
+            player?.release()
         } catch (_: Exception) {}
+    }
+
+    private fun requireVlc() {
+        Assume.assumeTrue("VLC/libvlc not available, skipping test", vlcAvailable)
     }
 
     @Test
     fun testInitialState() {
-        assertFalse(player.isPlaying)
-        assertEquals(0L, player.currentPosition)
-        assertEquals(0L, player.duration)
-        assertEquals(100, player.volume)
-        assertEquals(1.0f, player.playbackSpeed)
+        requireVlc()
+        val p = player!!
+        assertFalse(p.isPlaying)
+        assertEquals(0L, p.currentPosition)
+        assertEquals(0L, p.duration)
+        assertEquals(100, p.volume)
+        assertEquals(1.0f, p.playbackSpeed)
     }
 
     @Test
     fun testSetVolume() {
-        player.setVolume(50)
-        assertEquals(50, player.volume)
+        requireVlc()
+        val p = player!!
+        p.setVolume(50)
+        assertEquals(50, p.volume)
 
-        player.setVolume(0)
-        assertEquals(0, player.volume)
+        p.setVolume(0)
+        assertEquals(0, p.volume)
 
-        player.setVolume(100)
-        assertEquals(100, player.volume)
+        p.setVolume(100)
+        assertEquals(100, p.volume)
     }
 
     @Test
     fun testSetVolumeClampsValues() {
-        player.setVolume(-10)
-        assertEquals(0, player.volume)
+        requireVlc()
+        val p = player!!
+        p.setVolume(-10)
+        assertEquals(0, p.volume)
 
-        player.setVolume(150)
-        assertEquals(100, player.volume)
+        p.setVolume(150)
+        assertEquals(100, p.volume)
     }
 
     @Test
     fun testSetPlaybackSpeed() {
-        player.setPlaybackSpeed(1.5f)
-        assertEquals(1.5f, player.playbackSpeed)
+        requireVlc()
+        val p = player!!
+        p.setPlaybackSpeed(1.5f)
+        assertEquals(1.5f, p.playbackSpeed)
 
-        player.setPlaybackSpeed(2.0f)
-        assertEquals(2.0f, player.playbackSpeed)
+        p.setPlaybackSpeed(2.0f)
+        assertEquals(2.0f, p.playbackSpeed)
     }
 
     @Test
     fun testSetPlaybackSpeedClampsValues() {
-        player.setPlaybackSpeed(0.1f)
-        assertEquals(0.25f, player.playbackSpeed)
+        requireVlc()
+        val p = player!!
+        p.setPlaybackSpeed(0.1f)
+        assertEquals(0.25f, p.playbackSpeed)
 
-        player.setPlaybackSpeed(5.0f)
-        assertEquals(4.0f, player.playbackSpeed)
+        p.setPlaybackSpeed(5.0f)
+        assertEquals(4.0f, p.playbackSpeed)
     }
 
     @Test
     fun testCallbackOnPlayStateChanged() {
+        requireVlc()
+        val p = player!!
         var callbackCalled = false
-        var callbackState = false
-        player.onPlayStateChanged = { state ->
+        p.onPlayStateChanged = { state ->
             callbackCalled = true
-            callbackState = state
         }
-
-        // The callback is set but won't be triggered without actual media
-        assertNotNull(player.onPlayStateChanged)
+        assertNotNull(p.onPlayStateChanged)
     }
 
     @Test
     fun testCallbackOnPositionChanged() {
+        requireVlc()
+        val p = player!!
         var callbackCalled = false
-        player.onPositionChanged = { pos, dur ->
+        p.onPositionChanged = { pos, dur ->
             callbackCalled = true
         }
-
-        assertNotNull(player.onPositionChanged)
+        assertNotNull(p.onPositionChanged)
     }
 }
