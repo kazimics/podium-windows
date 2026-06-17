@@ -130,8 +130,6 @@ multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-sett
 
 # Desktop specific
 vlcj-core = { module = "uk.co.caprica:vlcj", version.ref = "vlcj" }
-vlcj-natives-win32 = { module = "uk.co.caprica:vlcj-natives-win32", version.ref = "vlcj" }
-vlcj-natives-win64 = { module = "uk.co.caprica:vlcj-natives-win64", version.ref = "vlcj" }
 
 # SQLDelight
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }

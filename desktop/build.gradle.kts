@@ -23,6 +23,9 @@ kotlin {
 
                 // JDBC SQLite for desktop
                 implementation("org.xerial:sqlite-jdbc:3.46.1.0")
+
+                // vlcj media player
+                implementation(libs.vlcj.core)
             }
         }
     }
