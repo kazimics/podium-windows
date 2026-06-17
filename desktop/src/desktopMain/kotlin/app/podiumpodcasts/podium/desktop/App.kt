@@ -72,9 +72,11 @@ fun App() {
                     currentScreen == "home" -> HomeScreen(
                         podcasts = podcasts,
                         onPodcastClick = { podcast -> selectedPodcast = podcast },
-                        onAddPodcast = { showAddDialog = true }
+                        onAddPodcast = { showAddDialog = true },
+                        onSettings = { currentScreen = "settings" }
                     )
                     currentScreen == "settings" -> SettingsScreen(
+                        database = database,
                         onBack = { currentScreen = "home" }
                     )
                 }
@@ -122,13 +124,17 @@ fun App() {
 private fun HomeScreen(
     podcasts: List<Podcast>,
     onPodcastClick: (Podcast) -> Unit,
-    onAddPodcast: () -> Unit
+    onAddPodcast: () -> Unit,
+    onSettings: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Podium") },
                 actions = {
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                     IconButton(onClick = onAddPodcast) {
                         Icon(Icons.Default.Add, contentDescription = "Add Podcast")
                     }
