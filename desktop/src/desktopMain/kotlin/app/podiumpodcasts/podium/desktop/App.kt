@@ -17,7 +17,10 @@ import app.podiumpodcasts.podium.data.model.PodcastEpisode
 import app.podiumpodcasts.podium.desktop.player.FullPlayer
 import app.podiumpodcasts.podium.desktop.player.MediaPlayerState
 import app.podiumpodcasts.podium.desktop.player.MiniPlayer
+import app.podiumpodcasts.podium.manager.AddPodcastResult
+import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,13 +33,16 @@ fun App() {
         AppDatabase.build(File(dbDir, "podium.db"))
     }
 
+    val podcastManager = remember { PodcastManager(database) }
     val playerState = remember { MediaPlayerState() }
+    val scope = rememberCoroutineScope()
 
     var podcasts by remember { mutableStateOf(emptyList<Podcast>()) }
     var currentScreen by remember { mutableStateOf("home") }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
-    var episodes by remember { mutableStateOf(emptyList<PodcastEpisode>()) }
     var showFullPlayer by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var addError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         podcasts = database.podcasts.getAllSync()
@@ -56,16 +62,14 @@ fun App() {
                         playerState = playerState,
                         onBack = {
                             selectedPodcast = null
-                            episodes = emptyList()
                         }
                     )
                     currentScreen == "home" -> HomeScreen(
                         podcasts = podcasts,
-                        database = database,
                         onPodcastClick = { podcast ->
                             selectedPodcast = podcast
                         },
-                        playerState = playerState
+                        onAddPodcast = { showAddDialog = true }
                     )
                     currentScreen == "settings" -> SettingsScreen(
                         onBack = { currentScreen = "home" }
@@ -79,28 +83,50 @@ fun App() {
             )
         }
     }
+
+    if (showAddDialog) {
+        AddPodcastDialog(
+            onDismiss = {
+                showAddDialog = false
+                addError = null
+            },
+            onConfirm = { url ->
+                showAddDialog = false
+                scope.launch {
+                    try {
+                        when (val result = podcastManager.addPodcast(url, null)) {
+                            is AddPodcastResult.Created -> {
+                                podcasts = database.podcasts.getAllSync()
+                            }
+                            is AddPodcastResult.Duplicate -> {
+                                addError = "Podcast already exists: ${result.duplicate.title}"
+                                showAddDialog = true
+                            }
+                        }
+                    } catch (e: Exception) {
+                        addError = "Failed to add podcast: ${e.message}"
+                        showAddDialog = true
+                    }
+                }
+            },
+            error = addError
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScreen(
     podcasts: List<Podcast>,
-    database: AppDatabase,
     onPodcastClick: (Podcast) -> Unit,
-    playerState: MediaPlayerState
+    onAddPodcast: () -> Unit
 ) {
-    var testUrl by remember { mutableStateOf("") }
-    var showTestDialog by remember { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Podium") },
                 actions = {
-                    IconButton(onClick = { showTestDialog = true }) {
-                        Icon(Icons.Default.PlayCircle, contentDescription = "Test Playback")
-                    }
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = onAddPodcast) {
                         Icon(Icons.Default.Add, contentDescription = "Add Podcast")
                     }
                 }
@@ -118,8 +144,10 @@ private fun HomeScreen(
                     Text("No podcasts yet", style = MaterialTheme.typography.headlineSmall)
                     Text("Add one to get started!", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = { showTestDialog = true }) {
-                        Text("Test Audio Playback")
+                    FilledTonalButton(onClick = onAddPodcast) {
+                        Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Podcast")
                     }
                 }
             }
@@ -138,43 +166,6 @@ private fun HomeScreen(
                 }
             }
         }
-    }
-
-    if (showTestDialog) {
-        AlertDialog(
-            onDismissRequest = { showTestDialog = false },
-            title = { Text("Test Audio Playback") },
-            text = {
-                Column {
-                    Text("Enter an audio URL to test playback:")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = testUrl,
-                        onValueChange = { testUrl = it },
-                        label = { Text("Audio URL") },
-                        placeholder = { Text("https://example.com/audio.mp3") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (testUrl.isNotBlank()) {
-                            playerState.play(url = testUrl, title = "Test Audio")
-                            showTestDialog = false
-                        }
-                    }
-                ) {
-                    Text("Play")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTestDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
@@ -246,6 +237,58 @@ private fun PodcastDetailScreen(
             }
         }
     }
+}
+
+@Composable
+private fun AddPodcastDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+    error: String? = null
+) {
+    var url by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Podcast") },
+        text = {
+            Column {
+                Text("Enter the RSS feed URL of the podcast:")
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = { Text("RSS Feed URL") },
+                    placeholder = { Text("https://example.com/feed.xml") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                if (error != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (url.isNotBlank()) {
+                        onConfirm(url)
+                    }
+                }
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 private fun formatDuration(seconds: Int): String {
