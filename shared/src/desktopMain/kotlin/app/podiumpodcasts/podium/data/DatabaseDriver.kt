@@ -7,6 +7,8 @@ import java.io.File
 
 actual fun createDatabaseDriver(databaseFile: File): SqlDriver {
     val driver = JdbcSqliteDriver("jdbc:sqlite:${databaseFile.absolutePath}")
-    PodiumDatabase.Schema.create(driver)
+    if (!databaseFile.exists()) {
+        PodiumDatabase.Schema.create(driver)
+    }
     return driver
 }

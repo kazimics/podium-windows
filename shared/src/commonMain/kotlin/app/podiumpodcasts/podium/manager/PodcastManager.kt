@@ -2,11 +2,9 @@ package app.podiumpodcasts.podium.manager
 
 import app.podiumpodcasts.podium.api.rss.FetchPodcastClient
 import app.podiumpodcasts.podium.api.rss.FetchPodcastClientResult
+import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.data.model.Podcast
 import app.podiumpodcasts.podium.data.model.PodcastEpisode
-import app.podiumpodcasts.podium.data.repository.EpisodeRepository
-import app.podiumpodcasts.podium.data.repository.PlayStateRepository
-import app.podiumpodcasts.podium.data.repository.PodcastRepository
 import app.podiumpodcasts.podium.utils.RssConverter
 
 sealed class AddPodcastResult {
@@ -15,24 +13,14 @@ sealed class AddPodcastResult {
 }
 
 class PodcastManager(
-    private val podcastRepository: PodcastRepository,
-    private val episodeRepository: EpisodeRepository,
-    private val playStateRepository: PlayStateRepository,
+    private val db: AppDatabase,
     private val fetchPodcastClient: FetchPodcastClient = FetchPodcastClient()
 ) {
-
-    suspend fun addPodcast(
-        origin: String,
-        seedColor: Int?
-    ): AddPodcastResult {
-        podcastRepository.getByOrigin(origin)?.let { duplicate ->
-            return AddPodcastResult.Duplicate(duplicate)
-        }
+    suspend fun addPodcast(origin: String, seedColor: Int?): AddPodcastResult {
+        db.podcasts.getByOrigin(origin)?.let { return AddPodcastResult.Duplicate(it) }
 
         val response = fetchPodcastClient.fetchNoCache(origin)
-
-        if (response !is FetchPodcastClientResult.Success)
-            throw Exception(response.toString())
+        if (response !is FetchPodcastClientResult.Success) throw Exception(response.toString())
 
         val podcast = RssConverter.toPodcast(response.rssChannel, origin, response.fileSize, seedColor)
         val episodes = response.rssChannel.items.map { RssConverter.toPodcastEpisode(it, podcast) }
@@ -40,23 +28,13 @@ class PodcastManager(
         return addPodcast(podcast, episodes, seedColor, false)
     }
 
-    suspend fun addPodcast(
-        podcast: Podcast,
-        episodes: List<PodcastEpisode>,
-        seedColor: Int?,
-        duplicateCheck: Boolean = true
-    ): AddPodcastResult {
-        if (duplicateCheck) podcastRepository.getByOrigin(podcast.origin)?.let { duplicate ->
-            return AddPodcastResult.Duplicate(duplicate)
-        }
+    suspend fun addPodcast(podcast: Podcast, episodes: List<PodcastEpisode>, seedColor: Int?, duplicateCheck: Boolean = true): AddPodcastResult {
+        if (duplicateCheck) db.podcasts.getByOrigin(podcast.origin)?.let { return AddPodcastResult.Duplicate(it) }
 
-        val finalPodcast = podcast.copy(imageSeedColor = seedColor ?: podcast.imageSeedColor)
-        val finalEpisodes = episodes.map { it.copy(imageSeedColor = finalPodcast.imageSeedColor) }
+        db.podcasts.insert(podcast)
+        episodes.forEach { db.episodes.insert(it) }
+        episodes.forEach { db.playStates.initState(it.id) }
 
-        podcastRepository.insert(finalPodcast)
-        finalEpisodes.forEach { episodeRepository.insert(it) }
-        finalEpisodes.forEach { playStateRepository.initState(it.id) }
-
-        return AddPodcastResult.Created(podcast = finalPodcast)
+        return AddPodcastResult.Created(podcast)
     }
 }

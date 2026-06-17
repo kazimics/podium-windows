@@ -54,6 +54,7 @@ sqldelight {
         create("PodiumDatabase") {
             packageName.set("app.podiumpodcasts.podium.sqldelight")
             verifyMigrations.set(false)
+            deriveSchemaFromMigrations.set(true)
         }
     }
 }

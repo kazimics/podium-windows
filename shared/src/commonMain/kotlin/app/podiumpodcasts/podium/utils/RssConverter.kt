@@ -4,19 +4,11 @@ import app.podiumpodcasts.podium.data.model.Podcast
 import app.podiumpodcasts.podium.data.model.PodcastEpisode
 import com.prof18.rssparser.model.RssChannel
 import com.prof18.rssparser.model.RssItem
-import kotlinx.datetime.Instant
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.TimeZone
 import java.security.MessageDigest
 
 object RssConverter {
 
-    fun toPodcast(
-        channel: RssChannel,
-        origin: String,
-        fileSize: Long,
-        seedColor: Int?
-    ): Podcast {
+    fun toPodcast(channel: RssChannel, origin: String, fileSize: Long, seedColor: Int?): Podcast {
         return Podcast(
             origin = origin,
             link = channel.link ?: "",
@@ -44,7 +36,7 @@ object RssConverter {
             imageUrl = item.image,
             author = item.author ?: podcast.author,
             pubDate = parseDate(item.pubDate),
-            duration = parseDuration(item.duration),
+            duration = parseDuration(item.itunesDuration),
             audioUrl = item.audio ?: "",
             podcastTitle = podcast.title,
             imageSeedColor = podcast.imageSeedColor
@@ -54,10 +46,15 @@ object RssConverter {
     private fun parseDate(dateString: String?): Long {
         if (dateString == null) return 0
         return try {
-            val instant = Instant.parse(dateString)
-            instant.toEpochMilliseconds()
+            val sdf = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.US)
+            sdf.parse(dateString)?.time ?: 0
         } catch (e: Exception) {
-            0
+            try {
+                java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
+                    .parse(dateString)?.time ?: 0
+            } catch (e2: Exception) {
+                0
+            }
         }
     }
 
