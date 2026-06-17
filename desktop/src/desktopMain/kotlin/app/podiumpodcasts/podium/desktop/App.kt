@@ -73,7 +73,15 @@ fun App() {
                         podcasts = podcasts,
                         onPodcastClick = { podcast -> selectedPodcast = podcast },
                         onAddPodcast = { showAddDialog = true },
+                        onDiscover = { currentScreen = "discover" },
                         onSettings = { currentScreen = "settings" }
+                    )
+                    currentScreen == "discover" -> DiscoverScreen(
+                        database = database,
+                        onBack = {
+                            currentScreen = "home"
+                            scope.launch { podcasts = database.podcasts.getAllSync() }
+                        }
                     )
                     currentScreen == "settings" -> SettingsScreen(
                         database = database,
@@ -125,6 +133,7 @@ private fun HomeScreen(
     podcasts: List<Podcast>,
     onPodcastClick: (Podcast) -> Unit,
     onAddPodcast: () -> Unit,
+    onDiscover: () -> Unit,
     onSettings: () -> Unit
 ) {
     Scaffold(
@@ -132,6 +141,9 @@ private fun HomeScreen(
             TopAppBar(
                 title = { Text("Podium") },
                 actions = {
+                    IconButton(onClick = onDiscover) {
+                        Icon(Icons.Default.Explore, contentDescription = "Discover")
+                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
