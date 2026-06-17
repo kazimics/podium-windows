@@ -24,3 +24,22 @@ local.properties
 /fastlane/README.md
 
 *.jks
+# Build
+build/
+*.class
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Gradle
+local.properties
+
+# Generated
+shared/build/
+desktop/build/
+feature-*/build/
+
