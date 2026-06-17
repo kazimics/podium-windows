@@ -8,5 +8,4 @@ plugins {
     id("com.google.devtools.ksp") version "2.3.4" apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.compose.multiplatform) apply false
-    alias(libs.plugins.sqldelight) apply false
 }

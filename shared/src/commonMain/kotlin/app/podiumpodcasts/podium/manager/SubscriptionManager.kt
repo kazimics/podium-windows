@@ -25,9 +25,9 @@ class SubscriptionManager(
         val subscription = db.subscriptions.getByOriginSync(origin) ?: return UpdatePodcastResult.NotSubscribed
 
         val response = fetchPodcastClient.fetch(origin, subscription.cacheLastModified, subscription.cacheETag, subscription.cacheContentLength)
-        when (response) {
-            is FetchPodcastClientResult.Unchanged -> return UpdatePodcastResult.Unchanged(response.reason)
-            is FetchPodcastClientResult.Failure -> return UpdatePodcastResult.Error(response.e)
+        return when (response) {
+            is FetchPodcastClientResult.Unchanged -> UpdatePodcastResult.Unchanged(response.reason)
+            is FetchPodcastClientResult.Failure -> UpdatePodcastResult.Error(response.e)
             is FetchPodcastClientResult.Success -> {
                 val podcast = RssConverter.toPodcast(response.rssChannel, origin, response.fileSize, seedColor)
                 val episodes = response.rssChannel.items.map { RssConverter.toPodcastEpisode(it, podcast) }
@@ -38,7 +38,7 @@ class SubscriptionManager(
                 val newEpisodes = episodes.filter { it.id !in existingIds }
                 newEpisodes.forEach { db.episodes.insert(it) }
 
-                return UpdatePodcastResult.Updated(podcast, newEpisodes.size)
+                UpdatePodcastResult.Updated(podcast, newEpisodes.size)
             }
         }
     }

@@ -9,7 +9,7 @@ import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 
-interface FetchPodcastClientResult {
+sealed interface FetchPodcastClientResult {
     data class Success(
         val rssChannel: com.prof18.rssparser.model.RssChannel,
         val fileSize: Long,

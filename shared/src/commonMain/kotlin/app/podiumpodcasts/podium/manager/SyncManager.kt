@@ -1,12 +1,11 @@
 package app.podiumpodcasts.podium.manager
 
 import app.podiumpodcasts.podium.data.AppDatabase
-import app.podiumpodcasts.podium.data.model.SyncAction
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import io.ktor.client.HttpClient
 import io.ktor.client.request.basicAuth
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -55,7 +54,7 @@ class SyncManager(
             val response = client.post("$baseUrl/api/2/subscriptions/$username/$deviceId.json") {
                 basicAuth(username, password)
                 contentType(ContentType.Application.Json)
-                setBody(json.encodeToString(kotlinx.serialization.builtins.ListSerializer(DeviceUpdate.serializer()), deviceUpdates))
+                setBody(json.encodeToString(deviceUpdates))
             }
 
             if (response.status == HttpStatusCode.OK) {

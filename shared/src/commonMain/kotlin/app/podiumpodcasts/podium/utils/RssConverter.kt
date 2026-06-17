@@ -9,15 +9,16 @@ import java.security.MessageDigest
 object RssConverter {
 
     fun toPodcast(channel: RssChannel, origin: String, fileSize: Long, seedColor: Int?): Podcast {
+        val ownerName = channel.itunesChannelData?.owner?.name
         return Podcast(
             origin = origin,
             link = channel.link ?: "",
             title = channel.title ?: "",
             description = channel.description ?: "",
-            author = channel.ownerName ?: "",
-            imageUrl = channel.image?.url ?: "",
+            author = ownerName ?: "",
+            imageUrl = channel.itunesChannelData?.image ?: channel.image?.url ?: "",
             imageSeedColor = seedColor ?: 0,
-            languageCode = channel.language ?: "",
+            languageCode = "",
             fileSize = fileSize
         )
     }
@@ -32,11 +33,11 @@ object RssConverter {
             origin = podcast.origin,
             link = item.link ?: "",
             title = item.title ?: "",
-            description = item.description ?: "",
-            imageUrl = item.image,
+            description = item.description ?: item.content ?: "",
+            imageUrl = item.itunesItemData?.image ?: item.image,
             author = item.author ?: podcast.author,
             pubDate = parseDate(item.pubDate),
-            duration = parseDuration(item.itunesDuration),
+            duration = parseDuration(item.itunesItemData?.duration),
             audioUrl = item.audio ?: "",
             podcastTitle = podcast.title,
             imageSeedColor = podcast.imageSeedColor

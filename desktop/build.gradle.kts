@@ -18,13 +18,11 @@ kotlin {
                 implementation(compose.components.resources)
 
                 implementation(project(":shared"))
-                implementation(project(":feature-home"))
-                implementation(project(":feature-discover"))
-                implementation(project(":feature-player"))
-                implementation(project(":feature-library"))
-                implementation(project(":feature-settings"))
 
                 implementation(libs.kotlinx.coroutines.core)
+
+                // JDBC SQLite for desktop
+                implementation("org.xerial:sqlite-jdbc:3.46.1.0")
             }
         }
     }

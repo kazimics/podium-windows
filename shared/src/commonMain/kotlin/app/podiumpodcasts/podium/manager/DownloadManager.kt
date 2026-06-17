@@ -1,10 +1,10 @@
 package app.podiumpodcasts.podium.manager
 
 import app.podiumpodcasts.podium.data.AppDatabase
+import app.podiumpodcasts.podium.utils.sha256
 import io.ktor.client.HttpClient
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.readBytes
-import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,27 +16,17 @@ class DownloadManager(
 ) {
     private val client = HttpClient()
 
-    suspend fun downloadEpisode(
-        episodeId: String,
-        audioUrl: String,
-        origin: String,
-        onProgress: (Long, Long) -> Unit = { _, _ -> }
-    ): Result<File> = withContext(Dispatchers.IO) {
+    suspend fun downloadEpisode(episodeId: String, audioUrl: String, origin: String): Result<File> = withContext(Dispatchers.IO) {
         try {
-            db.downloads.add(episodeId)
-
             val episodeDir = File(downloadsDir, origin.sha256())
             episodeDir.mkdirs()
             val outputFile = File(episodeDir, audioUrl.sha256())
 
-            val response = client.prepareGet(audioUrl).execute { httpResponse ->
+            client.prepareGet(audioUrl).execute { httpResponse ->
                 if (!httpResponse.status.isSuccess()) throw Exception("HTTP ${httpResponse.status.value}")
-                val bytes = httpResponse.readBytes()
-                outputFile.writeBytes(bytes)
-                bytes.size.toLong()
+                outputFile.writeBytes(httpResponse.readBytes())
             }
 
-            db.downloads.add(episodeId)
             Result.success(outputFile)
         } catch (e: Exception) {
             Result.failure(e)
@@ -47,7 +37,6 @@ class DownloadManager(
         val episodeDir = File(downloadsDir, origin.sha256())
         val outputFile = File(episodeDir, audioUrl.sha256())
         if (outputFile.exists()) outputFile.delete()
-        db.downloads.delete(episodeId)
     }
 
     fun getDownloadFile(origin: String, audioUrl: String): File {
