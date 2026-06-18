@@ -116,7 +116,7 @@ fun SettingsScreen(
             Text("About", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text("Podium - Podcast Player", style = MaterialTheme.typography.bodyMedium)
-            Text("Version 1.0.0", style = MaterialTheme.typography.bodySmall)
+            Text("Version 0.1.0", style = MaterialTheme.typography.bodySmall)
         }
     }
 

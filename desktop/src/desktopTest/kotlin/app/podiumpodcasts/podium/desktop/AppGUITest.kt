@@ -130,7 +130,7 @@ class AppGUITest {
                 SettingsScreen(database = database, onBack = {})
             }
         }
-        composeTestRule.onNodeWithText("Version 1.0.0").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Version 0.1.0").assertIsDisplayed()
     }
 
     @Test
