@@ -22,6 +22,7 @@ import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import app.podiumpodcasts.podium.utils.Logger
+import app.podiumpodcasts.podium.utils.Settings
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.PrintWriter
@@ -79,7 +80,7 @@ fun App() {
 
     val podcastManager = remember { PodcastManager(database) }
     val downloadManager = remember {
-        val downloadsDir = File(System.getProperty("user.home"), ".podium/downloads")
+        val downloadsDir = File(Settings.getDownloadPath())
         downloadsDir.mkdirs()
         DownloadManager(database, downloadsDir)
     }

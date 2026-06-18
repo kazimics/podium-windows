@@ -17,6 +17,8 @@ import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.manager.ExportManager
 import app.podiumpodcasts.podium.manager.ImportManager
 import app.podiumpodcasts.podium.manager.ImportResult
+import app.podiumpodcasts.podium.utils.Logger
+import app.podiumpodcasts.podium.utils.Settings
 import kotlinx.coroutines.launch
 import java.awt.FileDialog
 import java.awt.Frame
@@ -37,6 +39,7 @@ fun SettingsScreen(
     var showCopiedSnackbar by remember { mutableStateOf(false) }
     var showImportResult by remember { mutableStateOf<ImportResult?>(null) }
     var isImporting by remember { mutableStateOf(false) }
+    var downloadPath by remember { mutableStateOf(Settings.getDownloadPath()) }
 
     Scaffold(
         topBar = {
@@ -110,6 +113,50 @@ fun SettingsScreen(
                     }
                 }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Text("Downloads", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { Text("Download Location") },
+                supportingContent = {
+                    Text(
+                        text = downloadPath,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Folder, null) },
+                trailingContent = {
+                    TextButton(onClick = {
+                        val dir = openDirectoryPicker("Select Download Folder")
+                        if (dir != null) {
+                            Settings.setDownloadPath(dir)
+                            downloadPath = dir
+                            Logger.i("Settings", "Download path changed to: $dir")
+                        }
+                    }) {
+                        Text("Change")
+                    }
+                }
+            )
+
+            if (downloadPath != Settings.getDownloadPath().let {
+                    java.io.File(System.getProperty("user.home"), ".podium/downloads").absolutePath
+                }) {
+                TextButton(
+                    onClick = {
+                        Settings.resetDownloadPath()
+                        downloadPath = Settings.getDownloadPath()
+                        Logger.i("Settings", "Download path reset to default")
+                    },
+                    modifier = Modifier.padding(start = 72.dp)
+                ) {
+                    Text("Reset to Default")
+                }
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -229,4 +276,17 @@ private fun openFilePicker(title: String, vararg extensions: String): File? {
     } else {
         null
     }
+}
+
+private fun openDirectoryPicker(title: String): String? {
+    val frame = Frame()
+    val dialog = FileDialog(frame, title, FileDialog.LOAD)
+    dialog.file = "*.dummy"
+    dialog.isVisible = true
+
+    val dir = dialog.directory
+    dialog.dispose()
+    frame.dispose()
+
+    return dir
 }

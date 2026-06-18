@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Episode download for offline listening
 - Debug logging module (`~/.podium/debug.log`) for troubleshooting
 - CHANGELOG.md
+- Custom download path setting in Settings screen
+- Settings persistence via `~/.podium/settings.properties`
 
 ### Fixed
 - Serialization plugin missing in shared module causing Discover page to fail
