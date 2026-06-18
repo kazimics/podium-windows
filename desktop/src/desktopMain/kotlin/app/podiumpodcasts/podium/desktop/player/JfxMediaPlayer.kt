@@ -4,8 +4,74 @@ import app.podiumpodcasts.podium.utils.Logger
 import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
+import java.io.File
+import java.util.jar.JarFile
 
 private const val TAG = "AudioPlayer"
+
+object NativeLibLoader {
+    private var loaded = false
+
+    fun load() {
+        if (loaded) return
+        synchronized(this) {
+            if (loaded) return
+            try {
+                val nativeDir = File(System.getProperty("user.home"), ".podium/native")
+                nativeDir.mkdirs()
+
+                val nativeDlls = listOf("jfxmedia.dll", "gstreamer-lite.dll", "glib-lite.dll", "fxplugins.dll")
+
+                val allExist = nativeDlls.all { File(nativeDir, it).exists() }
+                if (!allExist) {
+                    Logger.d(TAG, "Extracting JavaFX native libraries...")
+                    val jarLocations = listOf(
+                        JfxMediaPlayer::class.java.protectionDomain?.codeSource?.location?.toURI()?.path,
+                        "libs/javafx-media-21.0.2-win.jar",
+                        "../libs/javafx-media-21.0.2-win.jar"
+                    )
+
+                    var extracted = false
+                    for (jarPath in jarLocations) {
+                        if (jarPath != null && jarPath.endsWith(".jar") && File(jarPath).exists()) {
+                            Logger.d(TAG, "Found JAR: $jarPath")
+                            JarFile(jarPath).use { jar ->
+                                for (dllName in nativeDlls) {
+                                    val entry = jar.getEntry(dllName) ?: continue
+                                    val outFile = File(nativeDir, dllName)
+                                    jar.getInputStream(entry).use { input -> outFile.writeBytes(input.readBytes()) }
+                                    Logger.d(TAG, "Extracted: $dllName (${outFile.length()} bytes)")
+                                    extracted = true
+                                }
+                            }
+                            if (extracted) break
+                        }
+                    }
+                    if (!extracted) Logger.e(TAG, "Could not extract native DLLs")
+                }
+
+                for (dllName in nativeDlls) {
+                    val dll = File(nativeDir, dllName)
+                    if (dll.exists()) {
+                        try {
+                            Runtime.getRuntime().load(dll.absolutePath)
+                            Logger.d(TAG, "Loaded: $dllName")
+                        } catch (e: UnsatisfiedLinkError) {
+                            Logger.w(TAG, "Cannot load $dllName: ${e.message}")
+                        }
+                    } else {
+                        Logger.e(TAG, "DLL missing: ${dll.absolutePath}")
+                    }
+                }
+
+                loaded = true
+                Logger.i(TAG, "JavaFX native libraries ready")
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to load JavaFX native libraries", e)
+            }
+        }
+    }
+}
 
 class JfxMediaPlayer {
 
@@ -31,8 +97,11 @@ class JfxMediaPlayer {
         release()
 
         try {
-            val mediaUrl = if (url.startsWith("http")) url else java.io.File(url).toURI().toString()
+            NativeLibLoader.load()
+
+            val mediaUrl = if (url.startsWith("http")) url else File(url).toURI().toString()
             Logger.d(TAG, "Media URI: $mediaUrl")
+
             val media = Media(mediaUrl)
             val mp = MediaPlayer(media)
 
@@ -76,7 +145,7 @@ class JfxMediaPlayer {
             }
 
             mediaPlayer = mp
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Logger.e(TAG, "Failed to create media player", e)
             onError?.invoke("Failed to play: ${e.message}")
         }
