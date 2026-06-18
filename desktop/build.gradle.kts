@@ -65,3 +65,9 @@ compose.desktop {
         }
     }
 }
+
+tasks.processDesktopMainResources {
+    from("src/desktopMain/resources/vlc") {
+        into("vlc")
+    }
+}

@@ -3,6 +3,7 @@ package app.podiumpodcasts.podium.desktop.player
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory
 import uk.co.caprica.vlcj.player.base.MediaPlayer
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -29,10 +30,39 @@ class VlcjMediaPlayer {
     private val positionUpdateExecutor = Executors.newSingleThreadScheduledExecutor()
     private var positionUpdateRunning = false
 
+    private fun findVlcPath(): String? {
+        // Check bundled resources first
+        val bundledPath = javaClass.getResource("/vlc")?.toURI()?.let { File(it) }
+        if (bundledPath?.exists() == true) {
+            return bundledPath.absolutePath
+        }
+
+        // Check common VLC installation paths
+        val commonPaths = listOf(
+            "C:\\Program Files\\VideoLAN\\VLC",
+            "C:\\Program Files (x86)\\VideoLAN\\VLC",
+            System.getenv("ProgramFiles") + "\\VideoLAN\\VLC",
+            System.getenv("LOCALAPPDATA") + "\\VideoLAN\\VLC"
+        )
+        for (path in commonPaths) {
+            if (File(path, "libvlc.dll").exists()) {
+                return path
+            }
+        }
+
+        return null
+    }
+
     private fun ensureInitialized(): MediaPlayer? {
         if (mediaPlayer != null) return mediaPlayer
         return try {
-            val f = MediaPlayerFactory("--no-video", "--no-xlib")
+            val vlcPath = findVlcPath()
+            val args = mutableListOf("--no-video", "--no-xlib")
+            if (vlcPath != null) {
+                args.addAll(listOf("--plugin-path", vlcPath))
+            }
+
+            val f = MediaPlayerFactory(*args.toTypedArray())
             val mp = f.mediaPlayers().newMediaPlayer()
 
             mp.events().addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
@@ -78,7 +108,7 @@ class VlcjMediaPlayer {
             mediaPlayer = mp
             mp
         } catch (e: Exception) {
-            onError?.invoke("VLC not installed: ${e.message}")
+            onError?.invoke("VLC not found: ${e.message}")
             null
         }
     }
