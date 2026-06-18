@@ -47,13 +47,9 @@
 
 ### 环境要求
 - JDK 17+
-- 安装 VLC Media Player（用于捆绑插件）
 
 ### 构建命令
 ```bash
-# 复制 VLC 插件到项目（首次构建前必须执行）
-xcopy "C:\Program Files\VideoLAN\VLC\plugins" "desktop\src\desktopMain\resources\vlc\plugins\" /E /I /Y
-
 # 直接运行应用
 gradlew.bat :desktop:run
 
@@ -69,7 +65,7 @@ gradlew.bat :desktop:desktopTest
 | 层级 | 技术 |
 |------|------|
 | UI | Compose Multiplatform + Material 3 |
-| 媒体播放 | vlcj (libvlc JVM 绑定) |
+| 媒体播放 | JavaFX MediaPlayer |
 | 数据库 | JDBC SQLite |
 | 网络 | Ktor |
 | RSS 解析 | rssparser |

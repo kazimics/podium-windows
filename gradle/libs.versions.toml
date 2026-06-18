@@ -20,7 +20,6 @@ sqlDelight = "2.1.0"
 kotlinxCoroutines = "1.10.2"
 kotlinxDatetime = "0.7.0"
 multiplatformSettings = "1.3.0"
-vlcj = "4.8.4"
 
 [libraries]
 aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -54,9 +53,6 @@ ktor-client-logging-kmp = { module = "io.ktor:ktor-client-logging", version.ref 
 rssparser-kmp = { module = "com.prof18.rssparser:rssparser", version.ref = "rssparser" }
 multiplatform-settings-core = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
 multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-settings-coroutines", version.ref = "multiplatformSettings" }
-
-# Desktop specific
-vlcj-core = { module = "uk.co.caprica:vlcj", version.ref = "vlcj" }
 
 # SQLDelight
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }

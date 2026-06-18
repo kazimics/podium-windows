@@ -19,9 +19,6 @@ shared/build/
 desktop/build/
 feature-*/build/
 
-# VLC bundled resources (copy from your VLC installation)
-desktop/src/desktopMain/resources/vlc/
-
 # Runtime state
 /data/
 

@@ -48,13 +48,9 @@ This project is a Windows desktop port of [aimok04/podium](https://github.com/ai
 
 ### Prerequisites
 - JDK 17+
-- VLC Media Player installed (for bundling plugins)
 
 ### Build Commands
 ```bash
-# Copy VLC plugins to project (required before first build)
-xcopy "C:\Program Files\VideoLAN\VLC\plugins" "desktop\src\desktopMain\resources\vlc\plugins\" /E /I /Y
-
 # Run the app directly
 gradlew.bat :desktop:run
 
@@ -70,7 +66,7 @@ gradlew.bat :desktop:desktopTest
 | Layer | Technology |
 |-------|-----------|
 | UI | Compose Multiplatform + Material 3 |
-| Media | vlcj (libvlc JVM binding) |
+| Media | JavaFX MediaPlayer |
 | Database | JDBC SQLite |
 | Network | Ktor |
 | RSS Parsing | rssparser |
