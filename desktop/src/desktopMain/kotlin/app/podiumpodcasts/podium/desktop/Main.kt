@@ -7,6 +7,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import javafx.application.Platform
 import java.io.File
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
@@ -14,6 +15,13 @@ import java.util.*
 
 fun main() {
     val logFile = File(System.getProperty("user.home"), ".podium/crash.log")
+
+    // Initialize JavaFX toolkit before anything else
+    try {
+        Platform.startup { }
+    } catch (_: IllegalStateException) {
+        // Already initialized
+    }
 
     try {
         application {
