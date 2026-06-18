@@ -44,10 +44,6 @@ compose.desktop {
     application {
         mainClass = "app.podiumpodcasts.podium.desktop.MainKt"
 
-        jvmArgs += listOf(
-            "--add-modules", "java.sql"
-        )
-
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "podium"
@@ -63,5 +59,15 @@ compose.desktop {
                 menu = true
             }
         }
+    }
+}
+
+tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask>().configureEach {
+    jvmArgs += "--add-modules=java.sql"
+}
+
+tasks.matching { it.name.contains("jlink", ignoreCase = true) }.configureEach {
+    doFirst {
+        (this as? org.gradle.process.JavaForkOptions)?.jvmArgs?.add("--add-modules=java.sql")
     }
 }
