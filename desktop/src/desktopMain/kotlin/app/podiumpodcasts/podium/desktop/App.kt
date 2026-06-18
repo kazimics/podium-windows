@@ -23,6 +23,19 @@ import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.PrintWriter
+import java.text.SimpleDateFormat
+import java.util.*
+
+private fun logError(e: Throwable) {
+    try {
+        val logFile = File(System.getProperty("user.home"), ".podium/crash.log")
+        logFile.parentFile?.mkdirs()
+        logFile.appendText(
+            "[${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}] ${e.message}\n${e.stackTraceToString()}\n\n"
+        )
+    } catch (_: Exception) {}
+}
 
 private suspend fun playAndRecordHistory(
     database: AppDatabase,
@@ -41,10 +54,15 @@ private suspend fun playAndRecordHistory(
 @Composable
 fun App() {
     val database = remember {
-        val userHome = System.getProperty("user.home")
-        val dbDir = File(userHome, ".podium")
-        dbDir.mkdirs()
-        AppDatabase.build(File(dbDir, "podium.db"))
+        try {
+            val userHome = System.getProperty("user.home")
+            val dbDir = File(userHome, ".podium")
+            dbDir.mkdirs()
+            AppDatabase.build(File(dbDir, "podium.db"))
+        } catch (e: Exception) {
+            logError(e)
+            throw e
+        }
     }
 
     val podcastManager = remember { PodcastManager(database) }
