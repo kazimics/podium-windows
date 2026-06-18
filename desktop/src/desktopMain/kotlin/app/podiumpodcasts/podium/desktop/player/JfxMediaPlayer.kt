@@ -31,7 +31,9 @@ class JfxMediaPlayer {
         release()
 
         try {
-            val media = Media(url)
+            val mediaUrl = if (url.startsWith("http")) url else java.io.File(url).toURI().toString()
+            Logger.d(TAG, "Media URI: $mediaUrl")
+            val media = Media(mediaUrl)
             val mp = MediaPlayer(media)
 
             mp.setOnReady {
