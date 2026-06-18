@@ -35,6 +35,8 @@ class ExportManagerTest {
         assertTrue(opml.contains("<opml version=\"2.0\">"))
         assertTrue(opml.contains("<title>Podium Podcasts</title>"))
         assertTrue(opml.contains("</opml>"))
+        assertTrue(opml.contains("<body>"))
+        assertTrue(opml.contains("</body>"))
     }
 
     @Test
@@ -60,6 +62,8 @@ class ExportManagerTest {
         assertTrue(opml.contains("Test Podcast"))
         assertTrue(opml.contains("https://example.com/feed.xml"))
         assertTrue(opml.contains("type=\"rss\""))
+        assertTrue(opml.contains("xmlUrl"))
+        assertTrue(opml.contains("htmlUrl"))
     }
 
     @Test
@@ -86,5 +90,44 @@ class ExportManagerTest {
         assertTrue(opml.contains("&lt;"))
         assertTrue(opml.contains("&gt;"))
         assertTrue(opml.contains("&quot;"))
+    }
+
+    @Test
+    fun testExportOpmlWithMultiplePodcasts() = runBlocking {
+        repeat(3) { i ->
+            database.podcasts.insert(Podcast(
+                origin = "https://example.com/feed$i.xml",
+                link = "https://example.com/$i",
+                title = "Podcast $i",
+                description = "Description $i",
+                author = "Author $i",
+                imageUrl = "https://example.com/image$i.jpg",
+                imageSeedColor = 0,
+                languageCode = "en",
+                fileSize = 1000L,
+                overrideTitle = "",
+                skipBeginning = 0,
+                skipEnding = 0
+            ))
+        }
+
+        val opml = exportManager.exportOpml()
+
+        assertTrue(opml.contains("Podcast 0"))
+        assertTrue(opml.contains("Podcast 1"))
+        assertTrue(opml.contains("Podcast 2"))
+    }
+
+    @Test
+    fun testExportOpmlValidStructure() = runBlocking {
+        val opml = exportManager.exportOpml()
+
+        assertTrue(opml.startsWith("<?xml version=\"1.0\""))
+        assertTrue(opml.contains("<opml version=\"2.0\">"))
+        assertTrue(opml.contains("<head>"))
+        assertTrue(opml.contains("</head>"))
+        assertTrue(opml.contains("<body>"))
+        assertTrue(opml.contains("</body>"))
+        assertTrue(opml.endsWith("</opml>"))
     }
 }

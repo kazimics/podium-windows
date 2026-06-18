@@ -61,6 +61,8 @@ class ImportManagerTest {
         assertTrue(result is ImportResult.Success)
         val success = result as ImportResult.Success
         assertEquals(0, success.added)
+        assertEquals(0, success.failed)
+        assertEquals(0, success.skipped)
     }
 
     @Test
@@ -70,6 +72,8 @@ class ImportManagerTest {
         val result = importManager.importOpml(opml)
 
         assertTrue(result is ImportResult.Error)
+        val error = result as ImportResult.Error
+        assertTrue(error.message.contains("Failed to parse OPML"))
     }
 
     @Test
@@ -91,10 +95,67 @@ class ImportManagerTest {
         assertTrue(secondResult is ImportResult.Success)
         val first = firstResult as ImportResult.Success
         val second = secondResult as ImportResult.Success
-        // If first import succeeded (added > 0), second should detect duplicate (skipped > 0)
-        // If first import failed due to network, both may have failed - that's OK
         if (first.added > 0) {
             assertTrue(second.skipped > 0)
         }
+    }
+
+    @Test
+    fun testImportMultiplePodcasts() = runBlocking {
+        val opml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <opml version="2.0">
+              <head><title>Multiple</title></head>
+              <body>
+                <outline type="rss" text="Podcast 1" xmlUrl="https://example.com/feed1.xml"/>
+                <outline type="rss" text="Podcast 2" xmlUrl="https://example.com/feed2.xml"/>
+                <outline type="rss" text="Podcast 3" xmlUrl="https://example.com/feed3.xml"/>
+              </body>
+            </opml>
+        """.trimIndent()
+
+        val result = importManager.importOpml(opml)
+
+        assertTrue(result is ImportResult.Success)
+        val success = result as ImportResult.Success
+        val total = success.added + success.failed
+        assertEquals(3, total)
+    }
+
+    @Test
+    fun testImportNonRssOutlineIgnored() = runBlocking {
+        val opml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <opml version="2.0">
+              <head><title>Non-RSS</title></head>
+              <body>
+                <outline text="Not a podcast" xmlUrl="https://example.com/not-a-feed"/>
+              </body>
+            </opml>
+        """.trimIndent()
+
+        val result = importManager.importOpml(opml)
+
+        assertTrue(result is ImportResult.Success)
+        val success = result as ImportResult.Success
+        assertEquals(0, success.added)
+        assertEquals(0, success.skipped)
+    }
+
+    @Test
+    fun testImportPreservesOriginalTitle() = runBlocking {
+        val opml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <opml version="2.0">
+              <head><title>Preserve</title></head>
+              <body>
+                <outline type="rss" text="My Custom Title" xmlUrl="https://example.com/feed.xml"/>
+              </body>
+            </opml>
+        """.trimIndent()
+
+        val result = importManager.importOpml(opml)
+
+        assertTrue(result is ImportResult.Success)
     }
 }

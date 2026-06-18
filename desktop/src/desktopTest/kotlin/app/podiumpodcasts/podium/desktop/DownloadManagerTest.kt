@@ -43,6 +43,33 @@ class DownloadManagerTest {
     }
 
     @Test
+    fun testGetDownloadFileConsistentPath() {
+        val origin = "https://example.com/feed.xml"
+        val audioUrl = "https://example.com/audio.mp3"
+
+        val file1 = downloadManager.getDownloadFile(origin, audioUrl)
+        val file2 = downloadManager.getDownloadFile(origin, audioUrl)
+
+        assertEquals(file1.absolutePath, file2.absolutePath)
+    }
+
+    @Test
+    fun testGetDownloadFileDifferentOrigins() {
+        val file1 = downloadManager.getDownloadFile("https://example.com/feed1.xml", "https://example.com/audio.mp3")
+        val file2 = downloadManager.getDownloadFile("https://example.com/feed2.xml", "https://example.com/audio.mp3")
+
+        assertNotEquals(file1.absolutePath, file2.absolutePath)
+    }
+
+    @Test
+    fun testGetDownloadFileDifferentUrls() {
+        val file1 = downloadManager.getDownloadFile("https://example.com/feed.xml", "https://example.com/audio1.mp3")
+        val file2 = downloadManager.getDownloadFile("https://example.com/feed.xml", "https://example.com/audio2.mp3")
+
+        assertNotEquals(file1.absolutePath, file2.absolutePath)
+    }
+
+    @Test
     fun testDownloadAndDeleteEpisode() = runBlocking {
         try {
             val origin = "https://example.com/feed.xml"
@@ -71,5 +98,14 @@ class DownloadManagerTest {
         )
 
         assertFalse(file.exists())
+    }
+
+    @Test
+    fun testDeleteNonExistentFile() = runBlocking {
+        downloadManager.deleteEpisodeDownload(
+            "nonexistent",
+            "https://example.com/feed.xml",
+            "https://example.com/audio.mp3"
+        )
     }
 }
