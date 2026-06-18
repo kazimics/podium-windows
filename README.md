@@ -3,8 +3,8 @@
 ---
 ![GitHub](https://img.shields.io/github/license/aimok04/podium?style=for-the-badge) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/aimok04/podium?style=for-the-badge)
 
-**podium** is a modern, open-source Podcast app for **Android**, written in Kotlin using Compose.
-The app uses **Material 3 Expressive** design to fit right in with modern Android UI.
+**podium** is a modern, open-source Podcast app for **Windows**, written in Kotlin using Compose Multiplatform.
+The app uses **Material 3** design and **vlcj** for media playback.
 
 > [!CAUTION]
 > Keep in mind that *podium* is work in progress software.
@@ -15,37 +15,77 @@ The app uses **Material 3 Expressive** design to fit right in with modern Androi
 > *podium* is still lacking some essential features.
 > Please open up a issue if you have any ideas! :)
 
-## 🚀 Notable Features
+## Notable Features
 
-- 📥 **Download** your favorite episodes or enable **auto-download** to always download new episodes.
-- Create **📂 lists** of podcasts or episodes to keep your library organized.
-- **🔍 Discover** new podcasts on the *» Discover «* tab *(powered by Apple Podcasts)*.
-- Listen to your favorite podcasts on the go with **🚘 Android Auto**.
-- **☁️ Sync** your subscriptions and play states with [**gpodder.net**](https://gpodder.net) or [**nextcloud-gpodder**](https://github.com/thrillfall/nextcloud-gpodder).
+- **Download** your favorite episodes for offline listening.
+- **Discover** new podcasts on the *Discover* tab *(powered by Apple Podcasts)*.
+- **Playback controls** - play/pause, seek, playback speed adjustment.
+- **Sleep timer** - automatically pause after a set duration.
+- **Queue management** - build and manage your playback queue.
+- **OPML import/export** - transfer your subscriptions between apps.
+- **History** - track your listening history.
 
-## 📦 Installation
+## Installation
 
-[<img src="/images/badge_obtainium.png" alt="Get it on Obtainium" height="80">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/aimok04/podium)
-[<img src="/images/badge_github.png" alt="Get it on GitHub" height="80">](https://github.com/aimok04/podium/releases)
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/app.podiumpodcasts.podium/)
-[<img src="/images/badge_google.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=app.podiumpodcasts.podium)
+1. Clone the repository:
+   ```
+   git clone https://github.com/aimok04/podium.git
+   cd podium-windows
+   ```
 
-## 🖼️ Impressions
+2. Build and install:
+   ```
+   set JAVA_HOME="C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot"
+   gradlew.bat :desktop:packageMsi
+   ```
 
-<div>
-    <img height="400" alt="Home" src="/images/screenshots/01.png" />
-    <img height="400" alt="Podcast" src="/images/screenshots/02.png" />
-    <img height="400" alt="Media player" src="/images/screenshots/03.png" />
-    <img height="400" alt="Discover" src="/images/screenshots/04.png" />
-    <img height="400" alt="Library" src="/images/screenshots/05.png" />
-    <img height="400" alt="Downloads" src="/images/screenshots/06.png" />
-</div>
+3. Run the MSI installer from `desktop/build/compose/binaries/main/msi/`
 
-## 🌍 l10n
+## Building from Source
 
-*podium* isn't available on **Weblate** yet.
-If you still want to contribute a translation, feel free to open a *PR*! :)
+### Prerequisites
+- JDK 17+
+- VLC Media Player installed (for media playback)
 
-## 📜 License
+### Build Commands
+```bash
+# Run the app directly
+gradlew.bat :desktop:run
+
+# Build MSI installer
+gradlew.bat :desktop:packageMsi
+
+# Run tests
+gradlew.bat :desktop:desktopTest
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI | Compose Multiplatform + Material 3 |
+| Media | vlcj (libvlc JVM binding) |
+| Database | JDBC SQLite |
+| Network | Ktor |
+| RSS Parsing | rssparser |
+| Serialization | kotlinx.serialization |
+
+## Project Structure
+
+```
+podium-windows/
+├── shared/                    # Shared business logic (KMP)
+├── desktop/                   # Windows desktop entry point
+├── feature-home/              # Home feature module
+├── feature-discover/          # Discover feature module
+├── feature-player/            # Player feature module
+├── feature-library/           # Library feature module
+├── feature-settings/          # Settings feature module
+├── build.gradle.kts           # Root build config
+├── settings.gradle.kts        # Module config
+└── gradle/                    # Gradle config
+```
+
+## License
 
 [GNU General Public License v3.0](/LICENSE)
