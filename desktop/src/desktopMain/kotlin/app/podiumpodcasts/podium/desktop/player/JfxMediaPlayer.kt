@@ -1,18 +1,15 @@
 package app.podiumpodcasts.podium.desktop.player
 
 import app.podiumpodcasts.podium.utils.Logger
-import javazoom.jl.player.Player
-import java.io.BufferedInputStream
-import java.net.URL
-import kotlin.concurrent.thread
+import javafx.scene.media.Media
+import javafx.scene.media.MediaPlayer
+import javafx.util.Duration
 
 private const val TAG = "AudioPlayer"
 
 class JfxMediaPlayer {
 
-    private var player: Player? = null
-    private var playerThread: Thread? = null
-    private var isStopped = false
+    private var mediaPlayer: MediaPlayer? = null
 
     var isPlaying = false
         private set
@@ -31,74 +28,104 @@ class JfxMediaPlayer {
 
     fun play(url: String) {
         Logger.i(TAG, "play() url=$url")
-        stop()
+        release()
 
-        isStopped = false
-        playerThread = thread(name = "audio-player", isDaemon = true) {
-            try {
-                val connection = URL(url).openConnection()
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
-                val inputStream = BufferedInputStream(connection.getInputStream())
+        try {
+            val media = Media(url)
+            val mp = MediaPlayer(media)
 
-                Logger.d(TAG, "Connected to audio stream, starting playback")
+            mp.setOnReady {
+                Logger.i(TAG, "Media ready, duration=${mp.totalDuration.toMillis()}ms")
+                duration = mp.totalDuration.toMillis().toLong()
+                mp.play()
+            }
 
-                val p = Player(inputStream)
-                player = p
-
+            mp.setOnPlaying {
+                Logger.d(TAG, "Playback started")
                 isPlaying = true
                 onPlayStateChanged?.invoke(true)
-
-                p.play()
-
-                if (!isStopped) {
-                    Logger.i(TAG, "Playback completed")
-                    isPlaying = false
-                    onPlayStateChanged?.invoke(false)
-                }
-            } catch (e: Exception) {
-                if (!isStopped) {
-                    Logger.e(TAG, "Playback error: ${e.message}")
-                    onError?.invoke("Playback failed: ${e.message}")
-                    isPlaying = false
-                    onPlayStateChanged?.invoke(false)
-                }
+                startPositionUpdates(mp)
             }
+
+            mp.setOnPaused {
+                Logger.d(TAG, "Playback paused")
+                isPlaying = false
+                onPlayStateChanged?.invoke(false)
+            }
+
+            mp.setOnStopped {
+                Logger.d(TAG, "Playback stopped")
+                isPlaying = false
+                onPlayStateChanged?.invoke(false)
+            }
+
+            mp.setOnEndOfMedia {
+                Logger.d(TAG, "Playback finished")
+                isPlaying = false
+                onPlayStateChanged?.invoke(false)
+            }
+
+            mp.setOnError {
+                val errorMsg = mp.error?.message ?: "Unknown error"
+                Logger.e(TAG, "Media error: $errorMsg")
+                onError?.invoke(errorMsg)
+                isPlaying = false
+                onPlayStateChanged?.invoke(false)
+            }
+
+            mediaPlayer = mp
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to create media player", e)
+            onError?.invoke("Failed to play: ${e.message}")
         }
     }
 
     fun pause() {
-        Logger.d(TAG, "pause() - JLayer basic player does not support pause")
+        Logger.d(TAG, "pause()")
+        mediaPlayer?.pause()
     }
 
     fun resume() {
-        Logger.d(TAG, "resume() - JLayer basic player does not support resume")
+        Logger.d(TAG, "resume()")
+        mediaPlayer?.play()
     }
 
     fun stop() {
-        isStopped = true
-        try {
-            player?.close()
-        } catch (_: Exception) {}
-        player = null
-        playerThread?.interrupt()
-        playerThread = null
-        isPlaying = false
+        Logger.d(TAG, "stop()")
+        mediaPlayer?.stop()
     }
 
     fun seek(positionMs: Long) {
-        Logger.d(TAG, "seek($positionMs) - JLayer does not support seeking")
+        mediaPlayer?.seek(Duration.millis(positionMs.toDouble()))
+        currentPosition = positionMs
+        onPositionChanged?.invoke(currentPosition, duration)
     }
 
     fun setVolume(vol: Int) {
-        this.volume = vol.coerceIn(0, 100)
+        val clamped = vol.coerceIn(0, 100)
+        mediaPlayer?.volume = clamped / 100.0
+        this.volume = clamped
     }
 
     fun setPlaybackSpeed(speed: Float) {
-        this.playbackSpeed = speed.coerceIn(0.25f, 4.0f)
+        val clamped = speed.coerceIn(0.25f, 4.0f)
+        mediaPlayer?.rate = clamped.toDouble()
+        this.playbackSpeed = clamped
     }
 
     fun release() {
-        stop()
+        mediaPlayer?.dispose()
+        mediaPlayer = null
+        isPlaying = false
+    }
+
+    private fun startPositionUpdates(mp: MediaPlayer) {
+        mp.currentTimeProperty().addListener { _, _, newTime ->
+            val pos = newTime.toMillis().toLong()
+            if (pos >= 0) {
+                currentPosition = pos
+                onPositionChanged?.invoke(currentPosition, duration)
+            }
+        }
     }
 }

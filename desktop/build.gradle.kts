@@ -25,8 +25,9 @@ kotlin {
                 // JDBC SQLite for desktop
                 implementation("org.xerial:sqlite-jdbc:3.46.1.0")
 
-                // JLayer for MP3 audio playback
-                implementation(files("../libs/jlayer.jar"))
+                // JavaFX Media for audio playback (MP3, AAC, M4A)
+                implementation(files("../libs/javafx-base-21.0.2-win.jar"))
+                implementation(files("../libs/javafx-media-21.0.2-win.jar"))
             }
         }
         val desktopTest by getting {
