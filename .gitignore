@@ -1,29 +1,3 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.kotlin
-
-/fastlane/.env
-/fastlane/.env.default
-/fastlane/report.xml
-/fastlane/Preview.html
-/fastlane/out
-/fastlane/tmp
-/fastlane/README.md
-
-*.jks
 # Build
 build/
 *.class
@@ -36,7 +10,9 @@ build/
 .DS_Store
 
 # Gradle
+.gradle/
 local.properties
+.kotlin/
 
 # Generated
 shared/build/
@@ -49,3 +25,14 @@ feature-*/build/
 # Test results
 test-result/
 
+# Claude Code
+.claude/
+
+# Mimocode (AI assistant)
+.mimocode/
+
+# Graphify (knowledge graph)
+graphify-out/
+
+# Logs
+*.log

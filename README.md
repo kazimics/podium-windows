@@ -3,17 +3,17 @@
 ---
 ![GitHub](https://img.shields.io/github/license/aimok04/podium?style=for-the-badge) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/aimok04/podium?style=for-the-badge)
 
-**podium** is a modern, open-source Podcast app for **Windows**, written in Kotlin using Compose Multiplatform.
-The app uses **Material 3** design and **vlcj** for media playback.
+English | [中文](README_zh.md)
+
+**podium** 是一个现代化的开源播客应用，面向 **Windows** 平台，使用 Kotlin 和 Compose Multiplatform 开发。
+应用采用 **Material 3** 设计，使用 **vlcj** 进行媒体播放。
 
 > [!CAUTION]
-> Keep in mind that *podium* is work in progress software.
-> It is far from feature complete and can contain bugs.
-
+> 请注意，*podium* 仍在开发中，功能尚未完善，可能存在 Bug。
 
 > [!NOTE]
-> *podium* is still lacking some essential features.
-> Please open up a issue if you have any ideas! :)
+> *podium* 仍缺少一些重要功能。
+> 如果你有任何想法，请提交 Issue！
 
 ## Notable Features
 
