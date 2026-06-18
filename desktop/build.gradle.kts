@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.io.File
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -64,16 +65,37 @@ compose.desktop {
     }
 }
 
-tasks.matching { it.name == "createRuntimeImage" }.configureEach {
-    doFirst {
-        val addModulesArg = "--add-modules=java.sql"
-        val jvmArgsField = this.javaClass.superclass?.getDeclaredField("jvmArgs")
-            ?: this.javaClass.getDeclaredField("jvmArgs")
-        jvmArgsField.isAccessible = true
-        @Suppress("UNCHECKED_CAST")
-        val jvmArgsList = jvmArgsField.get(this) as MutableList<String>
-        if (addModulesArg !in jvmArgsList) {
-            jvmArgsList.add(addModulesArg)
+tasks.register("patchRuntimeModules") {
+    dependsOn("createRuntimeImage")
+    doLast {
+        val javaHome = System.getenv("JAVA_HOME") ?: System.getProperty("java.home")
+        val jmodsDir = File(javaHome, "jmods")
+        val javaSqlJmod = File(jmodsDir, "java.sql.jmod")
+
+        val runtimeDirs = File(project.buildDir, "compose").walkTopDown()
+            .filter { it.name == "modules" && it.parentFile?.name == "lib" }
+            .map { it.parentFile.parentFile }
+            .toList()
+
+        for (runtimeDir in runtimeDirs) {
+            if (javaSqlJmod.exists()) {
+                println("Patching JRE at ${runtimeDir.absolutePath} with java.sql module")
+                project.exec {
+                    commandLine(
+                        File(javaHome, "bin/jlink").absolutePath,
+                        "--module-path", jmodsDir.absolutePath,
+                        "--add-modules", "java.sql",
+                        "--output", runtimeDir.absolutePath,
+                        "--no-header-files",
+                        "--no-man-pages",
+                        "--strip-debug"
+                    )
+                }
+            }
         }
     }
+}
+
+tasks.matching { it.name == "packageMsi" || it.name == "packageExe" }.configureEach {
+    dependsOn("patchRuntimeModules")
 }
