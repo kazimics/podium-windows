@@ -93,16 +93,20 @@ tasks.register("patchRuntimeModules") {
                 println("Patching JRE at ${runtimeDir.absolutePath} with java.sql module")
                 val tempDir = File(runtimeDir.parentFile, "runtime_patched")
                 if (tempDir.exists()) tempDir.deleteRecursively()
-                project.exec {
-                    commandLine(
-                        File(javaHome, "bin/jlink").absolutePath,
-                        "--module-path", jmodsDir.absolutePath,
-                        "--add-modules", allModules,
-                        "--output", tempDir.absolutePath,
-                        "--no-header-files",
-                        "--no-man-pages",
-                        "--strip-debug"
-                    )
+                val jlinkPath = File(javaHome, "bin/jlink").absolutePath
+                val process = ProcessBuilder(
+                    jlinkPath,
+                    "--module-path", jmodsDir.absolutePath,
+                    "--add-modules", allModules,
+                    "--output", tempDir.absolutePath,
+                    "--no-header-files",
+                    "--no-man-pages",
+                    "--strip-debug"
+                ).redirectErrorStream(true).start()
+                val output = process.inputStream.bufferedReader().readText()
+                val exitCode = process.waitFor()
+                if (exitCode != 0) {
+                    throw GradleException("jlink failed with exit code $exitCode:\n$output")
                 }
                 runtimeDir.deleteRecursively()
                 tempDir.renameTo(runtimeDir)
