@@ -44,6 +44,10 @@ compose.desktop {
     application {
         mainClass = "app.podiumpodcasts.podium.desktop.MainKt"
 
+        jvmArgs += listOf(
+            "--add-modules", "java.sql"
+        )
+
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "podium"
