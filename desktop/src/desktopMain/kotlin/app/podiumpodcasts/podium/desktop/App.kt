@@ -21,13 +21,17 @@ import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
+import app.podiumpodcasts.podium.utils.Logger
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
+private const val TAG = "App"
+
 private fun logError(e: Throwable) {
+    Logger.e(TAG, "Uncaught error: ${e.message}", e)
     try {
         val logFile = File(System.getProperty("user.home"), ".podium/crash.log")
         logFile.parentFile?.mkdirs()
@@ -42,12 +46,19 @@ private suspend fun playAndRecordHistory(
     playerState: MediaPlayerState,
     episode: PodcastEpisode
 ) {
-    playerState.play(
-        url = episode.audioUrl,
-        title = episode.title,
-        artworkUrl = episode.imageUrl
-    )
-    database.history.insert(episode.origin, episode.id)
+    Logger.i(TAG, "playAndRecordHistory: title=${episode.title}, url=${episode.audioUrl}")
+    try {
+        playerState.play(
+            url = episode.audioUrl,
+            title = episode.title,
+            artworkUrl = episode.imageUrl
+        )
+        database.history.insert(episode.origin, episode.id)
+        Logger.d(TAG, "History recorded for episode: ${episode.id}")
+    } catch (e: Exception) {
+        Logger.e(TAG, "Failed to play episode: ${episode.title}", e)
+        throw e
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +69,7 @@ fun App() {
             val userHome = System.getProperty("user.home")
             val dbDir = File(userHome, ".podium")
             dbDir.mkdirs()
+            Logger.i(TAG, "Initializing database at ${dbDir.absolutePath}")
             AppDatabase.build(File(dbDir, "podium.db"))
         } catch (e: Exception) {
             logError(e)
@@ -82,7 +94,9 @@ fun App() {
     var addError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        Logger.d(TAG, "Loading podcasts from database")
         podcasts = database.podcasts.getAllSync()
+        Logger.d(TAG, "Loaded ${podcasts.size} podcasts")
     }
 
     PodiumTheme {

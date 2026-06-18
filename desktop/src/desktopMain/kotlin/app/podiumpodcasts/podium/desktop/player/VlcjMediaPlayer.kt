@@ -1,11 +1,14 @@
 package app.podiumpodcasts.podium.desktop.player
 
+import app.podiumpodcasts.podium.utils.Logger
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory
 import uk.co.caprica.vlcj.player.base.MediaPlayer
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+
+private const val TAG = "VlcjMediaPlayer"
 
 class VlcjMediaPlayer {
 
@@ -31,13 +34,14 @@ class VlcjMediaPlayer {
     private var positionUpdateRunning = false
 
     private fun findVlcPath(): String? {
-        // Check bundled resources first
+        Logger.d(TAG, "Searching for VLC installation...")
+
         val bundledPath = javaClass.getResource("/vlc")?.toURI()?.let { File(it) }
         if (bundledPath?.exists() == true) {
+            Logger.d(TAG, "Found bundled VLC at: ${bundledPath.absolutePath}")
             return bundledPath.absolutePath
         }
 
-        // Check common VLC installation paths
         val commonPaths = listOf(
             "C:\\Program Files\\VideoLAN\\VLC",
             "C:\\Program Files (x86)\\VideoLAN\\VLC",
@@ -46,10 +50,12 @@ class VlcjMediaPlayer {
         )
         for (path in commonPaths) {
             if (File(path, "libvlc.dll").exists()) {
+                Logger.d(TAG, "Found VLC at: $path")
                 return path
             }
         }
 
+        Logger.w(TAG, "VLC not found in any standard location")
         return null
     }
 
@@ -62,35 +68,42 @@ class VlcjMediaPlayer {
                 args.addAll(listOf("--plugin-path", vlcPath))
             }
 
+            Logger.i(TAG, "Creating MediaPlayerFactory with args: $args")
             val f = MediaPlayerFactory(*args.toTypedArray())
             val mp = f.mediaPlayers().newMediaPlayer()
+            Logger.i(TAG, "MediaPlayer created successfully")
 
             mp.events().addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
                 override fun playing(mediaPlayer: MediaPlayer) {
+                    Logger.i(TAG, "Playback state: PLAYING")
                     isPlaying = true
                     onPlayStateChanged?.invoke(true)
                     startPositionUpdates()
                 }
 
                 override fun paused(mediaPlayer: MediaPlayer) {
+                    Logger.i(TAG, "Playback state: PAUSED")
                     isPlaying = false
                     onPlayStateChanged?.invoke(false)
                     stopPositionUpdates()
                 }
 
                 override fun stopped(mediaPlayer: MediaPlayer) {
+                    Logger.i(TAG, "Playback state: STOPPED")
                     isPlaying = false
                     onPlayStateChanged?.invoke(false)
                     stopPositionUpdates()
                 }
 
                 override fun finished(mediaPlayer: MediaPlayer) {
+                    Logger.i(TAG, "Playback state: FINISHED")
                     isPlaying = false
                     onPlayStateChanged?.invoke(false)
                     stopPositionUpdates()
                 }
 
                 override fun error(mediaPlayer: MediaPlayer) {
+                    Logger.e(TAG, "VLC error event received")
                     onError?.invoke("Playback error occurred")
                     isPlaying = false
                     onPlayStateChanged?.invoke(false)
@@ -100,6 +113,7 @@ class VlcjMediaPlayer {
                 override fun mediaChanged(mediaPlayer: MediaPlayer, mediaRef: uk.co.caprica.vlcj.media.MediaRef) {
                     duration = mediaPlayer.status().length()
                     currentPosition = 0L
+                    Logger.d(TAG, "Media changed, duration=${duration}ms")
                     onPositionChanged?.invoke(0L, duration)
                 }
             })
@@ -108,13 +122,20 @@ class VlcjMediaPlayer {
             mediaPlayer = mp
             mp
         } catch (e: Exception) {
+            Logger.e(TAG, "Failed to initialize VLC", e)
             onError?.invoke("VLC not found: ${e.message}")
             null
         }
     }
 
     fun play(url: String) {
-        val mp = ensureInitialized() ?: return
+        Logger.i(TAG, "play() called with url=$url")
+        val mp = ensureInitialized()
+        if (mp == null) {
+            Logger.e(TAG, "Cannot play: MediaPlayer is null (VLC initialization failed)")
+            return
+        }
+        Logger.d(TAG, "Calling media().play()")
         mp.media().play(url)
     }
 

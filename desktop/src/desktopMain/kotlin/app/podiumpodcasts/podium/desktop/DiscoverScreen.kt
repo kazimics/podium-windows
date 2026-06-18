@@ -17,7 +17,10 @@ import app.podiumpodcasts.podium.api.model.PodcastPreviewModel
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.PodcastManager
+import app.podiumpodcasts.podium.utils.Logger
 import kotlinx.coroutines.launch
+
+private const val TAG = "DiscoverScreen"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +45,12 @@ fun DiscoverScreen(
 
     LaunchedEffect(Unit) {
         isLoading = true
+        Logger.i(TAG, "Loading top podcasts from Apple Podcasts")
         try {
             topPodcasts = appleClient.topPodcasts.load()
+            Logger.i(TAG, "Loaded ${topPodcasts.size} top podcasts")
         } catch (e: Exception) {
+            Logger.e(TAG, "Failed to load top podcasts", e)
             errorMessage = "Failed to load top podcasts: ${e.message}"
         }
         isLoading = false
@@ -89,9 +95,12 @@ fun DiscoverScreen(
                         scope.launch {
                             isLoading = true
                             errorMessage = null
+                            Logger.i(TAG, "Searching for: $searchQuery")
                             try {
                                 searchResults = appleClient.search.search(searchQuery)
+                                Logger.i(TAG, "Search returned ${searchResults.size} results")
                             } catch (e: Exception) {
+                                Logger.e(TAG, "Search failed", e)
                                 errorMessage = "Search failed: ${e.message}"
                             }
                             isLoading = false
@@ -147,12 +156,15 @@ fun DiscoverScreen(
                                 if (!isAdded) {
                                     IconButton(onClick = {
                                         scope.launch {
+                                            Logger.i(TAG, "Adding podcast: ${preview.title} (${preview.fetchUrl})")
                                             try {
                                                 val result = podcastManager.addPodcast(preview.fetchUrl, null)
                                                 if (result is AddPodcastResult.Created || result is AddPodcastResult.Duplicate) {
                                                     addedOrigins = addedOrigins + preview.fetchUrl
+                                                    Logger.i(TAG, "Podcast added successfully: ${preview.title}")
                                                 }
                                             } catch (e: Exception) {
+                                                Logger.e(TAG, "Failed to add podcast: ${preview.title}", e)
                                                 errorMessage = "Failed to add: ${e.message}"
                                             }
                                         }

@@ -1,5 +1,6 @@
 package app.podiumpodcasts.podium.desktop.player
 
+import app.podiumpodcasts.podium.utils.Logger
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
+
+private const val TAG = "MediaPlayerState"
 
 data class QueueItem(
     val url: String,
@@ -54,7 +57,9 @@ class MediaPlayerState {
         private set
 
     init {
+        Logger.d(TAG, "MediaPlayerState initialized")
         player.onPlayStateChanged = { playing ->
+            Logger.d(TAG, "VLC play state changed: playing=$playing")
             isPlaying = playing
             isLoading = false
         }
@@ -63,12 +68,14 @@ class MediaPlayerState {
             duration = dur
         }
         player.onError = { msg ->
+            Logger.e(TAG, "VLC error: $msg")
             error = msg
             isLoading = false
         }
     }
 
     fun play(url: String, title: String? = null, artworkUrl: String? = null) {
+        Logger.i(TAG, "play() title=$title, url=$url")
         currentUrl = url
         currentTitle = title
         currentArtworkUrl = artworkUrl
@@ -78,18 +85,24 @@ class MediaPlayerState {
     }
 
     fun playFromQueue(index: Int) {
-        if (index < 0 || index >= queue.size) return
+        if (index < 0 || index >= queue.size) {
+            Logger.w(TAG, "playFromQueue: invalid index=$index, queueSize=${queue.size}")
+            return
+        }
         queueIndex = index
         val item = queue[index]
+        Logger.i(TAG, "playFromQueue: index=$index, title=${item.title}")
         play(item.url, item.title, item.artworkUrl)
     }
 
     fun addToQueue(url: String, title: String, artworkUrl: String? = null) {
+        Logger.d(TAG, "addToQueue: title=$title")
         queue.add(QueueItem(url, title, artworkUrl))
     }
 
     fun removeFromQueue(index: Int) {
         if (index < 0 || index >= queue.size) return
+        Logger.d(TAG, "removeFromQueue: index=$index")
         queue.removeAt(index)
         if (index < queueIndex) {
             queueIndex--
@@ -109,30 +122,39 @@ class MediaPlayerState {
     fun playNext() {
         if (queueIndex + 1 < queue.size) {
             playFromQueue(queueIndex + 1)
+        } else {
+            Logger.d(TAG, "playNext: no more items in queue")
         }
     }
 
     fun playPrevious() {
         if (currentPosition > 3000) {
+            Logger.d(TAG, "playPrevious: restarting current track (pos=${currentPosition}ms)")
             seek(0)
         } else if (queueIndex > 0) {
             playFromQueue(queueIndex - 1)
+        } else {
+            Logger.d(TAG, "playPrevious: at beginning of queue")
         }
     }
 
     fun pause() {
+        Logger.d(TAG, "pause()")
         player.pause()
     }
 
     fun resume() {
+        Logger.d(TAG, "resume()")
         player.resume()
     }
 
     fun togglePlayPause() {
+        Logger.d(TAG, "togglePlayPause: isPlaying=$isPlaying")
         if (isPlaying) pause() else resume()
     }
 
     fun stop() {
+        Logger.d(TAG, "stop()")
         player.stop()
         currentUrl = null
         currentTitle = null
@@ -163,11 +185,13 @@ class MediaPlayerState {
     fun changePlaybackSpeed(speed: Float) {
         player.setPlaybackSpeed(speed)
         playbackSpeed = speed
+        Logger.d(TAG, "changePlaybackSpeed: speed=$speed")
     }
 
     fun setSleepTimer(minutes: Int?) {
         sleepTimerJob?.cancel()
         if (minutes == null || minutes <= 0) {
+            Logger.d(TAG, "setSleepTimer: cancelled")
             sleepTimerTrigger = null
             sleepTimerMinutes = null
             return
@@ -175,10 +199,12 @@ class MediaPlayerState {
         val triggerTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(minutes.toLong())
         sleepTimerTrigger = triggerTime
         sleepTimerMinutes = minutes
+        Logger.i(TAG, "setSleepTimer: ${minutes} minutes")
 
         sleepTimerJob = scope.launch {
             delay(TimeUnit.MINUTES.toMillis(minutes.toLong()))
             withContext(Dispatchers.Main) {
+                Logger.i(TAG, "Sleep timer triggered, pausing playback")
                 pause()
                 sleepTimerTrigger = null
                 sleepTimerMinutes = null
@@ -199,6 +225,7 @@ class MediaPlayerState {
     }
 
     fun release() {
+        Logger.d(TAG, "release()")
         sleepTimerJob?.cancel()
         scope.cancel()
         player.release()
