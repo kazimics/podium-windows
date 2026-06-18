@@ -79,18 +79,33 @@ tasks.register("patchRuntimeModules") {
 
         for (runtimeDir in runtimeDirs) {
             if (javaSqlJmod.exists()) {
+                val modulesFile = File(runtimeDir, "lib/modules")
+                val existingModules = if (modulesFile.exists()) {
+                    modulesFile.readText().trim().split("\n").filter { it.isNotBlank() }
+                } else emptyList()
+
+                if ("java.sql" in existingModules) {
+                    println("java.sql already in JRE, skipping patch")
+                    continue
+                }
+
+                val allModules = (existingModules + "java.sql").joinToString(",")
                 println("Patching JRE at ${runtimeDir.absolutePath} with java.sql module")
+                val tempDir = File(runtimeDir.parentFile, "runtime_patched")
+                if (tempDir.exists()) tempDir.deleteRecursively()
                 project.exec {
                     commandLine(
                         File(javaHome, "bin/jlink").absolutePath,
                         "--module-path", jmodsDir.absolutePath,
-                        "--add-modules", "java.sql",
-                        "--output", runtimeDir.absolutePath,
+                        "--add-modules", allModules,
+                        "--output", tempDir.absolutePath,
                         "--no-header-files",
                         "--no-man-pages",
                         "--strip-debug"
                     )
                 }
+                runtimeDir.deleteRecursively()
+                tempDir.renameTo(runtimeDir)
             }
         }
     }
