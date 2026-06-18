@@ -47,10 +47,13 @@
 
 ### 环境要求
 - JDK 17+
-- 安装 VLC Media Player（用于媒体播放）
+- 安装 VLC Media Player（用于捆绑插件）
 
 ### 构建命令
 ```bash
+# 复制 VLC 插件到项目（首次构建前必须执行）
+xcopy "C:\Program Files\VideoLAN\VLC\plugins" "desktop\src\desktopMain\resources\vlc\plugins\" /E /I /Y
+
 # 直接运行应用
 gradlew.bat :desktop:run
 
