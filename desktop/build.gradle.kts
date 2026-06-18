@@ -60,8 +60,20 @@ compose.desktop {
                 shortcut = true
                 menu = true
             }
+        }
+    }
+}
 
-            jvmArgs += listOf("--add-modules", "java.sql")
+tasks.matching { it.name == "createRuntimeImage" }.configureEach {
+    doFirst {
+        val addModulesArg = "--add-modules=java.sql"
+        val jvmArgsField = this.javaClass.superclass?.getDeclaredField("jvmArgs")
+            ?: this.javaClass.getDeclaredField("jvmArgs")
+        jvmArgsField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val jvmArgsList = jvmArgsField.get(this) as MutableList<String>
+        if (addModulesArg !in jvmArgsList) {
+            jvmArgsList.add(addModulesArg)
         }
     }
 }
