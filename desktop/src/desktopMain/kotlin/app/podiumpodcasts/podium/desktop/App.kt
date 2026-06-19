@@ -359,11 +359,16 @@ private fun PodcastDetailScreen(
                             val progress = downloadProgress[episode.id]
 
                             if (isDownloaded) {
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = "Downloaded",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                Box(
+                                    modifier = Modifier.size(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = "Downloaded",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             } else if (isDownloading) {
                                 val fraction = if (progress != null && progress.second > 0) {
                                     progress.first.toFloat() / progress.second
