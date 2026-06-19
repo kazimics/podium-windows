@@ -99,6 +99,13 @@ fun App() {
     var downloadVersion by remember { mutableIntStateOf(0) }
     var completedDownloads by remember { mutableStateOf(setOf<String>()) }
 
+    LaunchedEffect(Unit) {
+        Logger.d(TAG, "Loading podcasts from database")
+        podcasts = database.podcasts.getAllSync()
+        completedDownloads = database.downloads.getAllDownloadedIds()
+        Logger.d(TAG, "Loaded ${podcasts.size} podcasts, ${completedDownloads.size} downloads")
+    }
+
     val startDownload = { episode: PodcastEpisode, podcastTitle: String ->
         downloadingEpisodes = downloadingEpisodes + episode.id
         completedDownloads = completedDownloads - episode.id
@@ -123,12 +130,6 @@ fun App() {
             }
         }
         Unit
-    }
-
-    LaunchedEffect(Unit) {
-        Logger.d(TAG, "Loading podcasts from database")
-        podcasts = database.podcasts.getAllSync()
-        Logger.d(TAG, "Loaded ${podcasts.size} podcasts")
     }
 
     PodiumTheme {
@@ -350,11 +351,12 @@ private fun PodcastDetailScreen(
                         leadingContent = {
                             IconButton(onClick = {
                                 scope.launch {
-                                    val audioFile = downloadManager.getDownloadFile(
-                                        episode.origin, episode.audioUrl,
-                                        episode.title, podcast.title
-                                    )
-                                    val url = if (audioFile.exists()) audioFile.absolutePath else episode.audioUrl
+                                    val downloadRecord = database.downloads.getByEpisodeId(episode.id)
+                                    val url = if (downloadRecord != null && File(downloadRecord.filePath).exists()) {
+                                        downloadRecord.filePath
+                                    } else {
+                                        episode.audioUrl
+                                    }
                                     val epWithUrl = episode.copy(audioUrl = url)
                                     playAndRecordHistory(database, playerState, epWithUrl)
                                 }
@@ -392,11 +394,12 @@ private fun PodcastDetailScreen(
                         },
                         modifier = Modifier.clickable {
                             scope.launch {
-                                val audioFile = downloadManager.getDownloadFile(
-                                    episode.origin, episode.audioUrl,
-                                    episode.title, podcast.title
-                                )
-                                val url = if (audioFile.exists()) audioFile.absolutePath else episode.audioUrl
+                                val downloadRecord = database.downloads.getByEpisodeId(episode.id)
+                                val url = if (downloadRecord != null && File(downloadRecord.filePath).exists()) {
+                                    downloadRecord.filePath
+                                } else {
+                                    episode.audioUrl
+                                }
                                 val epWithUrl = episode.copy(audioUrl = url)
                                 playAndRecordHistory(database, playerState, epWithUrl)
                             }

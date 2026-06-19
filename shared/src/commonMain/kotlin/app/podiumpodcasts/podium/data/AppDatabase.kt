@@ -93,6 +93,15 @@ class AppDatabase private constructor(private val connection: Connection) {
                     total INTEGER,
                     timestamp INTEGER NOT NULL
                 )
+             """)
+            stmt.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS podcastDownload (
+                    episodeId TEXT NOT NULL PRIMARY KEY,
+                    origin TEXT NOT NULL,
+                    filePath TEXT NOT NULL,
+                    podcastTitle TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL
+                )
             """)
         }
     }
@@ -103,6 +112,7 @@ class AppDatabase private constructor(private val connection: Connection) {
     val history = HistoryDao(connection)
     val subscriptions = SubscriptionDao(connection)
     val syncActions = SyncActionDao(connection)
+    val downloads = DownloadDao(connection)
 
     fun close() { connection.close() }
 }
@@ -371,6 +381,50 @@ class SyncActionDao(private val conn: Connection) {
     suspend fun delete(id: String) = withContext(Dispatchers.IO) {
         conn.prepareStatement("DELETE FROM syncAction WHERE id = ?").apply {
             setString(1, id); executeUpdate()
+        }
+    }
+}
+
+data class PodcastDownload(
+    val episodeId: String,
+    val origin: String,
+    val filePath: String,
+    val podcastTitle: String,
+    val timestamp: Long
+)
+
+class DownloadDao(private val conn: Connection) {
+    suspend fun insert(episodeId: String, origin: String, filePath: String, podcastTitle: String) = withContext(Dispatchers.IO) {
+        val ts = System.currentTimeMillis()
+        conn.prepareStatement("INSERT OR REPLACE INTO podcastDownload (episodeId, origin, filePath, podcastTitle, timestamp) VALUES (?, ?, ?, ?, ?)").apply {
+            setString(1, episodeId); setString(2, origin); setString(3, filePath)
+            setString(4, podcastTitle); setLong(5, ts); executeUpdate()
+        }
+    }
+
+    suspend fun getByEpisodeId(episodeId: String): PodcastDownload? = withContext(Dispatchers.IO) {
+        val ps = conn.prepareStatement("SELECT * FROM podcastDownload WHERE episodeId = ?")
+        ps.setString(1, episodeId)
+        val rs = ps.executeQuery()
+        if (rs.next()) PodcastDownload(
+            episodeId = rs.getString("episodeId"),
+            origin = rs.getString("origin"),
+            filePath = rs.getString("filePath"),
+            podcastTitle = rs.getString("podcastTitle"),
+            timestamp = rs.getLong("timestamp")
+        ) else null
+    }
+
+    suspend fun getAllDownloadedIds(): Set<String> = withContext(Dispatchers.IO) {
+        val rs = conn.createStatement().executeQuery("SELECT episodeId FROM podcastDownload")
+        val ids = mutableSetOf<String>()
+        while (rs.next()) { ids.add(rs.getString("episodeId")) }
+        ids
+    }
+
+    suspend fun delete(episodeId: String) = withContext(Dispatchers.IO) {
+        conn.prepareStatement("DELETE FROM podcastDownload WHERE episodeId = ?").apply {
+            setString(1, episodeId); executeUpdate()
         }
     }
 }

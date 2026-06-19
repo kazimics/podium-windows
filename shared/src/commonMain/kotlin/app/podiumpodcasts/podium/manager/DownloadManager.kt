@@ -53,6 +53,7 @@ class DownloadManager(
             }
 
             Logger.i(TAG, "Download complete: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
+            db.downloads.insert(episodeId, origin, outputFile.absolutePath, podcastTitle)
             Result.success(outputFile)
         } catch (e: Exception) {
             Logger.e(TAG, "Download failed: $audioUrl", e)
