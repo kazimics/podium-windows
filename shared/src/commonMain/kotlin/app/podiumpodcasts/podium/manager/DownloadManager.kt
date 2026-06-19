@@ -8,6 +8,7 @@ import io.ktor.client.statement.readBytes
 import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -34,12 +35,15 @@ class DownloadManager(
             val outputFile = File(podcastDir, "${sanitizeFileName(episodeTitle)}.$ext")
             Logger.i(TAG, "Downloading to: ${outputFile.absolutePath}")
 
+            // Report 0% before starting
+            onProgress?.invoke(0L, 0L)
+
             client.prepareGet(audioUrl).execute { httpResponse ->
                 if (!httpResponse.status.isSuccess()) throw Exception("HTTP ${httpResponse.status.value}")
                 val totalBytes = httpResponse.contentLength() ?: 0L
                 val bytes = httpResponse.readBytes()
-                onProgress?.invoke(bytes.size.toLong(), totalBytes)
                 outputFile.writeBytes(bytes)
+                onProgress?.invoke(bytes.size.toLong(), totalBytes)
             }
 
             Logger.i(TAG, "Download complete: ${outputFile.absolutePath} (${outputFile.length()} bytes)")

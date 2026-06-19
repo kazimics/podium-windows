@@ -366,8 +366,8 @@ private fun PodcastDetailScreen(
                                     contentDescription = "Downloaded",
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                            } else if (isDownloading && progress != null) {
-                                val fraction = if (progress.second > 0) {
+                            } else if (isDownloading) {
+                                val fraction = if (progress != null && progress.second > 0) {
                                     progress.first.toFloat() / progress.second
                                 } else 0f
                                 CircularProgressIndicator(
@@ -375,7 +375,7 @@ private fun PodcastDetailScreen(
                                     modifier = Modifier.size(24.dp),
                                     strokeWidth = 2.dp
                                 )
-                            } else if (!isDownloaded && !isDownloading) {
+                            } else {
                                 IconButton(onClick = {
                                     onDownloadStart(episode.id)
                                     scope.launch {

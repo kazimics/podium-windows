@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Download file naming now uses podcast title as folder and episode title as filename
+- Download progress indicator now shows immediately when download starts
+- Download state persists when navigating away and back (progress indicator visible)
 - Download completed icon now shows CheckCircle instead of Download icon
 - Folder picker uses JFileChooser for proper folder selection on Windows
 - DownloadManager state recreated when download path setting changes
