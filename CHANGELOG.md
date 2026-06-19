@@ -14,14 +14,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Download completed icon shows CheckCircle
 
 ### Fixed
+- Download freezes app — blocking I/O on Main thread moved to Dispatchers.IO
 - Download file naming now uses podcast title as folder and episode title as filename
-- Download progress now shows real-time incremental progress (streaming download)
-- Download state persists when navigating away and back (App-level coroutine scope)
-- Download completed icon now shows CheckCircle instead of Download icon
-- Folder picker uses JFileChooser for proper folder selection on Windows
-- DownloadManager state recreated when download path setting changes
+- Download progress now shows real-time incremental progress
+- Download state persists when navigating away and back
+- Download completed icon now shows CheckCircle
+- Folder picker uses JFileChooser for proper folder selection
 - isDownloaded cache invalidated after download completes
-- Replaced Ktor readBytes() with java.net.URL streaming for progress callbacks
 
 ### Changed
 - Replaced VLC (vlcj) with JavaFX MediaPlayer for audio playback

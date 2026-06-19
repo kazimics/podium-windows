@@ -2,6 +2,8 @@ package app.podiumpodcasts.podium.manager
 
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.utils.Logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
 
@@ -18,8 +20,8 @@ class DownloadManager(
         episodeTitle: String = episodeId,
         podcastTitle: String = "Unknown",
         onProgress: ((Long, Long) -> Unit)? = null
-    ): Result<File> {
-        return try {
+    ): Result<File> = withContext(Dispatchers.IO) {
+        try {
             val podcastDir = File(downloadsDir, sanitizeFileName(podcastTitle))
             podcastDir.mkdirs()
             val ext = audioUrl.substringAfterLast('.', "mp3").substringBefore('?')
