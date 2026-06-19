@@ -7,6 +7,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.0] - 2026-06-19
 
 ### Added
+- Custom download path setting in Settings screen
+- Settings persistence via `~/.podium/settings.properties`
+- Download progress indicator with determinate progress
+- Download state persists across navigation
+- Download completed icon shows CheckCircle
+
+### Fixed
+- Download file naming now uses podcast title as folder and episode title as filename
+- Download completed icon now shows CheckCircle instead of Download icon
+- Folder picker uses JFileChooser for proper folder selection on Windows
+- DownloadManager state recreated when download path setting changes
+- isDownloaded cache invalidated after download completes
+
+### Changed
+- Replaced VLC (vlcj) with JavaFX MediaPlayer for audio playback
+- Removed 87MB VLC plugin bundling requirement
+- Users no longer need to install VLC separately
+
+## [0.1.0] - 2026-06-18
+
+### Added
 - Initial release of podium-windows
 - Podcast subscription via RSS feed URL
 - Discover page with Apple Podcasts search and top podcasts
@@ -19,8 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Episode download for offline listening
 - Debug logging module (`~/.podium/debug.log`) for troubleshooting
 - CHANGELOG.md
-- Custom download path setting in Settings screen
-- Settings persistence via `~/.podium/settings.properties`
+- Comprehensive test suite (67+ tests across 8 test classes)
 
 ### Fixed
 - Serialization plugin missing in shared module causing Discover page to fail
@@ -28,19 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - JavaFX Media local file path not converted to URI format
 - JavaFX Toolkit not initialized before MediaPlayer creation
 - JavaFX native library loading from JAR with multiple fallback paths
-- Download file naming now uses podcast title as folder and episode title as filename
-- Download progress indicator shows progress during download
-- Download state persists when navigating away and back (downloadVersion counter)
-- Download completed icon now shows CheckCircle instead of Download icon
-- Folder picker uses JFileChooser for proper folder selection on Windows
-- DownloadManager state recreated when download path setting changes
-- isDownloaded cache invalidated after download completes via downloadVersion
 
 ### Changed
 - Version set to 0.1.0 (pre-release)
-- Replaced VLC (vlcj) with JavaFX MediaPlayer for audio playback
-- Removed 87MB VLC plugin bundling requirement
-- Users no longer need to install VLC separately
 - Updated CI workflow to run new test classes
 - Removed unused Android deploy workflow (deploy.yaml)
 - Removed build artifacts from git tracking
