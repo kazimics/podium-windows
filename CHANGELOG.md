@@ -14,13 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Download completed icon shows CheckCircle
 
 ### Fixed
-- Download freezes app — blocking I/O on Main thread moved to Dispatchers.IO
-- Download file naming now uses podcast title as folder and episode title as filename
-- Download progress now shows real-time incremental progress
+- Download status shows completed too early — added completedDownloads set to track actual completion
+- isDownloaded now checks completedDownloads first, falls back to file existence
 - Download state persists when navigating away and back
-- Download completed icon now shows CheckCircle
-- Folder picker uses JFileChooser for proper folder selection
-- isDownloaded cache invalidated after download completes
+- Download progress now shows real-time incremental progress
+- Download completed icon now shows CheckCircle only after successful completion
 
 ### Changed
 - Replaced VLC (vlcj) with JavaFX MediaPlayer for audio playback

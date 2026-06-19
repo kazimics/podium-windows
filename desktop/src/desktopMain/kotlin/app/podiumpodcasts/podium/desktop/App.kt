@@ -97,12 +97,14 @@ fun App() {
     var downloadProgress by remember { mutableStateOf(mapOf<String, Pair<Long, Long>>()) }
     var downloadingEpisodes by remember { mutableStateOf(setOf<String>()) }
     var downloadVersion by remember { mutableIntStateOf(0) }
+    var completedDownloads by remember { mutableStateOf(setOf<String>()) }
 
     val startDownload = { episode: PodcastEpisode, podcastTitle: String ->
         downloadingEpisodes = downloadingEpisodes + episode.id
+        completedDownloads = completedDownloads - episode.id
         scope.launch {
             try {
-                downloadManager.downloadEpisode(
+                val result = downloadManager.downloadEpisode(
                     episodeId = episode.id,
                     audioUrl = episode.audioUrl,
                     origin = episode.origin,
@@ -110,6 +112,9 @@ fun App() {
                     podcastTitle = podcastTitle
                 ) { current, total ->
                     downloadProgress = downloadProgress + (episode.id to Pair(current, total))
+                }
+                if (result.isSuccess) {
+                    completedDownloads = completedDownloads + episode.id
                 }
             } finally {
                 downloadingEpisodes = downloadingEpisodes - episode.id
@@ -142,6 +147,7 @@ fun App() {
                         downloadingEpisodes = downloadingEpisodes,
                         downloadProgress = downloadProgress,
                         downloadVersion = downloadVersion,
+                        completedDownloads = completedDownloads,
                         onStartDownload = startDownload,
                         onBack = { selectedPodcast = null }
                     )
@@ -287,6 +293,7 @@ private fun PodcastDetailScreen(
     downloadingEpisodes: Set<String>,
     downloadProgress: Map<String, Pair<Long, Long>>,
     downloadVersion: Int,
+    completedDownloads: Set<String>,
     onStartDownload: (PodcastEpisode, String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -319,7 +326,7 @@ private fun PodcastDetailScreen(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
                 items(episodes) { episode ->
-                    val isDownloaded = remember(episode, downloadVersion) {
+                    val isDownloaded = episode.id in completedDownloads || remember(episode, downloadVersion) {
                         downloadManager.getDownloadFile(
                             episode.origin, episode.audioUrl,
                             episode.title, podcast.title
@@ -361,7 +368,7 @@ private fun PodcastDetailScreen(
                             }
                         },
                         trailingContent = {
-                            val isDownloaded = remember(episode, downloadVersion) {
+                            val isDownloaded = episode.id in completedDownloads || remember(episode, downloadVersion) {
                                 downloadManager.getDownloadFile(
                                     episode.origin, episode.audioUrl,
                                     episode.title, podcast.title
