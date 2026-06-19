@@ -5,7 +5,6 @@ import javafx.scene.media.Media
 import javafx.scene.media.MediaPlayer
 import javafx.util.Duration
 import java.io.File
-import java.util.jar.JarFile
 
 private const val TAG = "AudioPlayer"
 
@@ -22,20 +21,18 @@ object NativeLibLoader {
 
                 val nativeDlls = listOf("jfxmedia.dll", "gstreamer-lite.dll", "glib-lite.dll", "fxplugins.dll")
 
-                val allExist = nativeDlls.all { File(nativeDir, it).exists() }
-                if (!allExist) {
-                    Logger.d(TAG, "Extracting JavaFX native libraries...")
-                    val jarLocations = listOf(
-                        JfxMediaPlayer::class.java.protectionDomain?.codeSource?.location?.toURI()?.path,
-                        "libs/javafx-media-21.0.2-win.jar",
-                        "../libs/javafx-media-21.0.2-win.jar"
-                    )
+                val jarLocations = listOf(
+                    JfxMediaPlayer::class.java.protectionDomain?.codeSource?.location?.toURI()?.path,
+                    "libs/javafx-media-21.0.2-win.jar",
+                    "../libs/javafx-media-21.0.2-win.jar"
+                )
 
-                    var extracted = false
-                    for (jarPath in jarLocations) {
-                        if (jarPath != null && jarPath.endsWith(".jar") && File(jarPath).exists()) {
-                            Logger.d(TAG, "Found JAR: $jarPath")
-                            JarFile(jarPath).use { jar ->
+                var extracted = false
+                for (jarPath in jarLocations) {
+                    if (jarPath != null && jarPath.endsWith(".jar") && File(jarPath).exists()) {
+                        Logger.d(TAG, "Found JAR: $jarPath")
+                        try {
+                            java.util.jar.JarFile(jarPath).use { jar ->
                                 for (dllName in nativeDlls) {
                                     val entry = jar.getEntry(dllName) ?: continue
                                     val outFile = File(nativeDir, dllName)
@@ -45,9 +42,10 @@ object NativeLibLoader {
                                 }
                             }
                             if (extracted) break
+                        } catch (e: Exception) {
+                            Logger.w(TAG, "Failed to extract from $jarPath: ${e.message}")
                         }
                     }
-                    if (!extracted) Logger.e(TAG, "Could not extract native DLLs")
                 }
 
                 for (dllName in nativeDlls) {
@@ -59,8 +57,6 @@ object NativeLibLoader {
                         } catch (e: UnsatisfiedLinkError) {
                             Logger.w(TAG, "Cannot load $dllName: ${e.message}")
                         }
-                    } else {
-                        Logger.e(TAG, "DLL missing: ${dll.absolutePath}")
                     }
                 }
 
@@ -182,6 +178,7 @@ class JfxMediaPlayer {
         val clamped = speed.coerceIn(0.25f, 4.0f)
         mediaPlayer?.rate = clamped.toDouble()
         this.playbackSpeed = clamped
+        Logger.d(TAG, "setPlaybackSpeed($clamped) - note: pitch may change on Windows")
     }
 
     fun release() {

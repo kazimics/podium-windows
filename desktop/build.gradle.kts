@@ -29,6 +29,9 @@ kotlin {
                 implementation(files("../libs/javafx-base-21.0.2-win.jar"))
                 implementation(files("../libs/javafx-graphics-21.0.2-win.jar"))
                 implementation(files("../libs/javafx-media-21.0.2-win.jar"))
+
+                // JLayer for MP3 decoding (pitch-preserving speed)
+                implementation(files("../libs/jlayer.jar"))
             }
         }
         val desktopTest by getting {
