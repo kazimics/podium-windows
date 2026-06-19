@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Download completed icon shows CheckCircle
 
 ### Fixed
+- WSOLA time-stretch crash: IndexOutOfBounds when frame size < 2048
+- WsolaTimeStretch now uses actual frame size instead of fixed 2048
 - Download records persisted in database — download status survives path changes
 - isDownloaded checks completedDownloads set (no file.exists() fallback)
 - Play button checks database for actual file path before playing
