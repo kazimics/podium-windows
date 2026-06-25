@@ -16,7 +16,9 @@ private const val TAG = "MediaPlayerState"
 data class QueueItem(
     val url: String,
     val title: String,
-    val artworkUrl: String? = null
+    val artworkUrl: String? = null,
+    val episodeId: String? = null,
+    val isDownloaded: Boolean = false
 )
 
 class MediaPlayerState {
@@ -40,6 +42,7 @@ class MediaPlayerState {
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    private var isUserPaused = false
 
     var currentUrl by mutableStateOf<String?>(null)
         private set
@@ -60,16 +63,19 @@ class MediaPlayerState {
     init {
         Logger.d(TAG, "MediaPlayerState initialized")
         player.onPlayStateChanged = { playing ->
-            Logger.d(TAG, "VLC play state changed: playing=$playing")
+            Logger.d(TAG, "Play state changed: playing=$playing")
             isPlaying = playing
             isLoading = false
+            if (!playing && !isUserPaused) {
+                playNext()
+            }
         }
         player.onPositionChanged = { pos, dur ->
             currentPosition = pos
             duration = dur
         }
         player.onError = { msg ->
-            Logger.e(TAG, "VLC error: $msg")
+            Logger.e(TAG, "Playback error: $msg")
             error = msg
             isLoading = false
         }
@@ -82,6 +88,16 @@ class MediaPlayerState {
         currentArtworkUrl = artworkUrl
         isLoading = true
         error = null
+        isUserPaused = false
+
+        val existingIndex = queue.indexOfFirst { it.url == url }
+        if (existingIndex >= 0) {
+            queueIndex = existingIndex
+        } else {
+            queue.add(QueueItem(url, title ?: "Unknown", artworkUrl))
+            queueIndex = queue.size - 1
+        }
+
         player.play(url, durationMs = durationMs)
     }
 
@@ -96,9 +112,15 @@ class MediaPlayerState {
         play(item.url, item.title, item.artworkUrl)
     }
 
-    fun addToQueue(url: String, title: String, artworkUrl: String? = null) {
+    fun addToQueue(
+        url: String,
+        title: String,
+        artworkUrl: String? = null,
+        episodeId: String? = null,
+        isDownloaded: Boolean = false
+    ) {
         Logger.d(TAG, "addToQueue: title=$title")
-        queue.add(QueueItem(url, title, artworkUrl))
+        queue.add(QueueItem(url, title, artworkUrl, episodeId, isDownloaded))
     }
 
     fun removeFromQueue(index: Int) {
@@ -128,6 +150,23 @@ class MediaPlayerState {
         }
     }
 
+    fun removeSelectedFromQueue(selectedIndices: Set<Int>) {
+        val sorted = selectedIndices.sortedDescending()
+        for (index in sorted) {
+            if (index in queue.indices) {
+                queue.removeAt(index)
+            }
+        }
+        queueIndex = if (queue.isEmpty()) -1
+        else queueIndex.coerceIn(0, queue.size - 1)
+    }
+
+    fun clearQueue() {
+        queue.clear()
+        queueIndex = -1
+        stop()
+    }
+
     fun playPrevious() {
         if (currentPosition > 3000) {
             Logger.d(TAG, "playPrevious: restarting current track (pos=${currentPosition}ms)")
@@ -141,11 +180,13 @@ class MediaPlayerState {
 
     fun pause() {
         Logger.d(TAG, "pause()")
+        isUserPaused = true
         player.pause()
     }
 
     fun resume() {
         Logger.d(TAG, "resume()")
+        isUserPaused = false
         player.resume()
     }
 

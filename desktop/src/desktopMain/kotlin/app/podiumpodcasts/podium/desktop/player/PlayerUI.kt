@@ -21,6 +21,7 @@ import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 fun MiniPlayer(
     state: MediaPlayerState,
     onExpand: () -> Unit,
+    onShowQueue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (state.currentUrl == null) return
@@ -76,6 +77,10 @@ fun MiniPlayer(
 
                 IconButton(onClick = { state.seekForward() }) {
                     Icon(Icons.Default.Forward10, contentDescription = "Seek Forward")
+                }
+
+                IconButton(onClick = onShowQueue) {
+                    Icon(Icons.Default.QueueMusic, contentDescription = "Queue")
                 }
             }
         }
@@ -250,13 +255,40 @@ fun FullPlayer(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QueueSheet(
+fun QueueSheet(
     state: MediaPlayerState,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDownload: ((QueueItem) -> Unit)? = null,
+    onDeleteDownload: ((QueueItem) -> Unit)? = null
 ) {
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var selectedIndices by remember { mutableStateOf(setOf<Int>()) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Queue") },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isSelectionMode) {
+                    Text("${selectedIndices.size} selected")
+                } else {
+                    Text("Queue (${state.queue.size})")
+                }
+                TextButton(onClick = {
+                    if (isSelectionMode) {
+                        isSelectionMode = false
+                        selectedIndices = setOf()
+                    } else {
+                        isSelectionMode = true
+                    }
+                }) {
+                    Text(if (isSelectionMode) "Cancel" else "Select")
+                }
+            }
+        },
         text = {
             if (state.queue.isEmpty()) {
                 Text("Queue is empty")
@@ -275,7 +307,15 @@ private fun QueueSheet(
                                 )
                             },
                             leadingContent = {
-                                if (index == state.queueIndex) {
+                                if (isSelectionMode) {
+                                    Checkbox(
+                                        checked = index in selectedIndices,
+                                        onCheckedChange = { checked ->
+                                            selectedIndices = if (checked) selectedIndices + index
+                                            else selectedIndices - index
+                                        }
+                                    )
+                                } else if (index == state.queueIndex) {
                                     Icon(
                                         Icons.Default.PlayArrow,
                                         contentDescription = null,
@@ -284,13 +324,27 @@ private fun QueueSheet(
                                 }
                             },
                             trailingContent = {
-                                IconButton(onClick = { state.removeFromQueue(index) }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove")
+                                if (!isSelectionMode) {
+                                    Row {
+                                        if (onDownload != null && !item.isDownloaded) {
+                                            IconButton(onClick = { onDownload(item) }) {
+                                                Icon(Icons.Default.Download, contentDescription = "Download")
+                                            }
+                                        }
+                                        IconButton(onClick = { state.removeFromQueue(index) }) {
+                                            Icon(Icons.Default.Close, contentDescription = "Remove")
+                                        }
+                                    }
                                 }
                             },
                             modifier = Modifier.clickable {
-                                state.playFromQueue(index)
-                                onDismiss()
+                                if (isSelectionMode) {
+                                    selectedIndices = if (index in selectedIndices) selectedIndices - index
+                                    else selectedIndices + index
+                                } else {
+                                    state.playFromQueue(index)
+                                    onDismiss()
+                                }
                             }
                         )
                     }
@@ -298,8 +352,31 @@ private fun QueueSheet(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
+            Row {
+                if (isSelectionMode && selectedIndices.isNotEmpty()) {
+                    TextButton(onClick = {
+                        state.removeSelectedFromQueue(selectedIndices)
+                        selectedIndices = setOf()
+                        isSelectionMode = false
+                    }) {
+                        Text("Delete (${selectedIndices.size})")
+                    }
+                    if (onDownload != null) {
+                        TextButton(onClick = {
+                            selectedIndices.forEach { idx ->
+                                if (idx in state.queue.indices) onDownload(state.queue[idx])
+                            }
+                            selectedIndices = setOf()
+                            isSelectionMode = false
+                        }) {
+                            Text("Download")
+                        }
+                    }
+                } else {
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
+                }
             }
         }
     )

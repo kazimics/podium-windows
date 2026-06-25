@@ -107,13 +107,25 @@ fun HistoryScreen(
                                 }
                             },
                             trailingContent = {
-                                IconButton(onClick = {
-                                    scope.launch {
-                                        database.history.delete(episode.id)
-                                        historyItems = database.history.getAllWithEpisode()
+                                Row {
+                                    IconButton(onClick = {
+                                        playerState.addToQueue(
+                                            url = episode.audioUrl,
+                                            title = episode.title,
+                                            artworkUrl = episode.imageUrl,
+                                            episodeId = episode.id
+                                        )
+                                    }) {
+                                        Icon(Icons.Default.PlaylistAdd, contentDescription = "Add to Queue")
                                     }
-                                }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Remove")
+                                    IconButton(onClick = {
+                                        scope.launch {
+                                            database.history.delete(episode.id)
+                                            historyItems = database.history.getAllWithEpisode()
+                                        }
+                                    }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Remove")
+                                    }
                                 }
                             },
                             modifier = Modifier.clickable {

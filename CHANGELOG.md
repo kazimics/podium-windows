@@ -11,9 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Progress bar not syncing to total duration when playback finishes naturally
 - Volume control now functional (was a no-op in custom audio pipeline)
 - M4aDecoder resume: `seekToMs` was a no-op, now restarts playback from correct position
+- Queue always showing empty: episodes now auto-added to queue when played
+- Auto-advance to next queue item when track ends naturally
 
 ### Added
 - Mute toggle: clicking volume icon mutes/unmutes, restoring previous volume level
+- Queue button on mini player for quick access to playlist
+- QueueSheet with selection mode, batch delete, and per-item download
+- "Add to Queue" button on episode lists (podcast detail + history)
 
 ### Changed
 - Player thread safety: added `@Volatile` to `isStopped`, `currentVolume`, `isPlaying`, `currentPosition`

@@ -17,6 +17,7 @@ import app.podiumpodcasts.podium.data.model.PodcastEpisode
 import app.podiumpodcasts.podium.desktop.player.FullPlayer
 import app.podiumpodcasts.podium.desktop.player.MediaPlayerState
 import app.podiumpodcasts.podium.desktop.player.MiniPlayer
+import app.podiumpodcasts.podium.desktop.player.QueueSheet
 import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
@@ -93,6 +94,7 @@ fun App() {
     var currentScreen by remember { mutableStateOf("home") }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var showFullPlayer by remember { mutableStateOf(false) }
+    var showQueueFromMini by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var addError by remember { mutableStateOf<String?>(null) }
     var downloadProgress by remember { mutableStateOf(mapOf<String, Pair<Long, Long>>()) }
@@ -183,9 +185,17 @@ fun App() {
 
             MiniPlayer(
                 state = playerState,
-                onExpand = { showFullPlayer = true }
+                onExpand = { showFullPlayer = true },
+                onShowQueue = { showQueueFromMini = true }
             )
         }
+    }
+
+    if (showQueueFromMini) {
+        QueueSheet(
+            state = playerState,
+            onDismiss = { showQueueFromMini = false }
+        )
     }
 
     if (showAddDialog) {
@@ -359,10 +369,27 @@ private fun PodcastDetailScreen(
                             val isDownloading = episode.id in downloadingEpisodes
                             val progress = downloadProgress[episode.id]
 
-                            Box(
-                                modifier = Modifier.size(48.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = {
+                                    scope.launch {
+                                        val downloadRecord = database.downloads.getByEpisodeId(episode.id)
+                                        val url = if (downloadRecord != null && File(downloadRecord.filePath).exists()) {
+                                            downloadRecord.filePath
+                                        } else {
+                                            episode.audioUrl
+                                        }
+                                        playerState.addToQueue(
+                                            url = url,
+                                            title = episode.title,
+                                            artworkUrl = episode.imageUrl,
+                                            episodeId = episode.id,
+                                            isDownloaded = episode.id in completedDownloads
+                                        )
+                                    }
+                                }) {
+                                    Icon(Icons.Default.PlaylistAdd, contentDescription = "Add to Queue")
+                                }
+
                                 if (isDownloaded) {
                                     Icon(
                                         Icons.Default.CheckCircle,
