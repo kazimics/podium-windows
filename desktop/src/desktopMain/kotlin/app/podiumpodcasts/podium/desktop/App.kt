@@ -17,7 +17,7 @@ import app.podiumpodcasts.podium.data.model.PodcastEpisode
 import app.podiumpodcasts.podium.desktop.player.FullPlayer
 import app.podiumpodcasts.podium.desktop.player.MediaPlayerState
 import app.podiumpodcasts.podium.desktop.player.MiniPlayer
-import app.podiumpodcasts.podium.desktop.player.QueueSheet
+import app.podiumpodcasts.podium.desktop.player.QueueDrawer
 import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
@@ -192,7 +192,7 @@ fun App() {
     }
 
     if (showQueueFromMini) {
-        QueueSheet(
+        QueueDrawer(
             state = playerState,
             onDismiss = { showQueueFromMini = false }
         )
@@ -390,26 +390,31 @@ private fun PodcastDetailScreen(
                                     Icon(Icons.Default.PlaylistAdd, contentDescription = "Add to Queue")
                                 }
 
-                                if (isDownloaded) {
-                                    Icon(
-                                        Icons.Default.CheckCircle,
-                                        contentDescription = "Downloaded",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                } else if (isDownloading) {
-                                    val fraction = if (progress != null && progress.second > 0) {
-                                        progress.first.toFloat() / progress.second
-                                    } else 0f
-                                    CircularProgressIndicator(
-                                        progress = { fraction },
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    IconButton(onClick = {
-                                        onStartDownload(episode, podcast.title)
-                                    }) {
-                                        Icon(Icons.Default.Download, contentDescription = "Download")
+                                Box(
+                                    modifier = Modifier.size(48.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isDownloaded) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = "Downloaded",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else if (isDownloading) {
+                                        val fraction = if (progress != null && progress.second > 0) {
+                                            progress.first.toFloat() / progress.second
+                                        } else 0f
+                                        CircularProgressIndicator(
+                                            progress = { fraction },
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        IconButton(onClick = {
+                                            onStartDownload(episode, podcast.title)
+                                        }) {
+                                            Icon(Icons.Default.Download, contentDescription = "Download")
+                                        }
                                     }
                                 }
                             }

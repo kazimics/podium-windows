@@ -126,19 +126,20 @@ class MediaPlayerState {
     fun removeFromQueue(index: Int) {
         if (index < 0 || index >= queue.size) return
         Logger.d(TAG, "removeFromQueue: index=$index")
+        val wasPlaying = index == queueIndex
         queue.removeAt(index)
-        if (index < queueIndex) {
-            queueIndex--
-        } else if (index == queueIndex) {
+        if (wasPlaying) {
             if (queue.isNotEmpty()) {
-                val newIndex = queueIndex.coerceAtMost(queue.size - 1)
-                queueIndex = newIndex
-                val item = queue[newIndex]
+                val nextIndex = index.coerceIn(0, queue.size - 1)
+                queueIndex = nextIndex
+                val item = queue[nextIndex]
                 play(item.url, item.title, item.artworkUrl)
             } else {
                 queueIndex = -1
                 stop()
             }
+        } else if (index < queueIndex) {
+            queueIndex--
         }
     }
 
@@ -151,14 +152,26 @@ class MediaPlayerState {
     }
 
     fun removeSelectedFromQueue(selectedIndices: Set<Int>) {
+        val wasPlayingSelected = queueIndex in selectedIndices
         val sorted = selectedIndices.sortedDescending()
         for (index in sorted) {
             if (index in queue.indices) {
                 queue.removeAt(index)
             }
         }
-        queueIndex = if (queue.isEmpty()) -1
-        else queueIndex.coerceIn(0, queue.size - 1)
+        if (wasPlayingSelected) {
+            if (queue.isNotEmpty()) {
+                queueIndex = queueIndex.coerceIn(0, queue.size - 1)
+                val item = queue[queueIndex]
+                play(item.url, item.title, item.artworkUrl)
+            } else {
+                queueIndex = -1
+                stop()
+            }
+        } else {
+            queueIndex = if (queue.isEmpty()) -1
+            else queueIndex.coerceIn(0, queue.size - 1)
+        }
     }
 
     fun clearQueue() {

@@ -168,4 +168,176 @@ class MediaPlayerStateTest {
         val item = QueueItem(url = "https://example.com/audio.mp3", title = "Test")
         assertNull(item.artworkUrl)
     }
+
+    @Test
+    fun testQueueItemWithEpisodeId() {
+        val item = QueueItem(
+            url = "https://example.com/audio.mp3",
+            title = "Test",
+            episodeId = "ep-123",
+            isDownloaded = true
+        )
+        assertEquals("ep-123", item.episodeId)
+        assertTrue(item.isDownloaded)
+    }
+
+    @Test
+    fun testPlayAutoAddsToQueue() {
+        try {
+            state.play("https://example.com/audio1.mp3", "Episode 1")
+        } catch (e: Throwable) {
+            // Audio player native libraries not available in test
+        }
+
+        assertEquals(1, state.queue.size)
+        assertEquals("Episode 1", state.queue[0].title)
+        assertEquals(0, state.queueIndex)
+    }
+
+    @Test
+    fun testPlayDoesNotDuplicateInQueue() {
+        try {
+            state.play("https://example.com/audio1.mp3", "Episode 1")
+            state.play("https://example.com/audio1.mp3", "Episode 1")
+        } catch (e: Throwable) {}
+
+        assertEquals(1, state.queue.size)
+        assertEquals(0, state.queueIndex)
+    }
+
+    @Test
+    fun testPlayUpdatesQueueIndexForExisting() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+
+        try {
+            state.play("https://example.com/audio2.mp3", "Episode 2")
+        } catch (e: Throwable) {}
+
+        assertEquals(1, state.queueIndex)
+    }
+
+    @Test
+    fun testRemoveCurrentlyPlayingPlaysNext() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+        state.addToQueue("https://example.com/audio3.mp3", "Episode 3")
+
+        // Simulate playing index 1
+        try {
+            state.playFromQueue(1)
+        } catch (e: Throwable) {}
+
+        // Remove currently playing item
+        state.removeFromQueue(1)
+
+        assertEquals(2, state.queue.size)
+        assertEquals("Episode 3", state.queue[state.queueIndex].title)
+    }
+
+    @Test
+    fun testRemoveCurrentlyPlayingStopsWhenEmpty() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+
+        try {
+            state.playFromQueue(0)
+        } catch (e: Throwable) {}
+
+        state.removeFromQueue(0)
+
+        assertEquals(0, state.queue.size)
+        assertEquals(-1, state.queueIndex)
+    }
+
+    @Test
+    fun testRemoveCurrentlyPlayingPlaysFirstWhenNoNext() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+
+        try {
+            state.playFromQueue(1)
+        } catch (e: Throwable) {}
+
+        // Remove the last item (index 1), should play from index 0
+        state.removeFromQueue(1)
+
+        assertEquals(1, state.queue.size)
+        assertEquals(0, state.queueIndex)
+        assertEquals("Episode 1", state.queue[0].title)
+    }
+
+    @Test
+    fun testRemoveItemBeforePlayingAdjustsIndex() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+        state.addToQueue("https://example.com/audio3.mp3", "Episode 3")
+
+        try {
+            state.playFromQueue(2)
+        } catch (e: Throwable) {}
+
+        state.removeFromQueue(0)
+
+        assertEquals(2, state.queue.size)
+        assertEquals(1, state.queueIndex)
+    }
+
+    @Test
+    fun testClearQueue() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+
+        try {
+            state.playFromQueue(0)
+        } catch (e: Throwable) {}
+
+        state.clearQueue()
+
+        assertEquals(0, state.queue.size)
+        assertEquals(-1, state.queueIndex)
+    }
+
+    @Test
+    fun testRemoveSelectedFromQueue() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+        state.addToQueue("https://example.com/audio3.mp3", "Episode 3")
+        state.addToQueue("https://example.com/audio4.mp3", "Episode 4")
+
+        state.removeSelectedFromQueue(setOf(0, 2))
+
+        assertEquals(2, state.queue.size)
+        assertEquals("Episode 2", state.queue[0].title)
+        assertEquals("Episode 4", state.queue[1].title)
+    }
+
+    @Test
+    fun testRemoveSelectedAdjustsPlayingIndex() {
+        state.addToQueue("https://example.com/audio1.mp3", "Episode 1")
+        state.addToQueue("https://example.com/audio2.mp3", "Episode 2")
+        state.addToQueue("https://example.com/audio3.mp3", "Episode 3")
+
+        try {
+            state.playFromQueue(2)
+        } catch (e: Throwable) {}
+
+        state.removeSelectedFromQueue(setOf(0))
+
+        assertEquals(2, state.queue.size)
+        assertEquals(1, state.queueIndex)
+    }
+
+    @Test
+    fun testAddToQueueWithEpisodeIdAndDownloaded() {
+        state.addToQueue(
+            url = "https://example.com/audio1.mp3",
+            title = "Episode 1",
+            episodeId = "ep-123",
+            isDownloaded = true
+        )
+
+        assertEquals(1, state.queue.size)
+        assertEquals("ep-123", state.queue[0].episodeId)
+        assertTrue(state.queue[0].isDownloaded)
+    }
 }

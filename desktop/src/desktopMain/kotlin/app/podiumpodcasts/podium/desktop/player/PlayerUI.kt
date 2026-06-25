@@ -24,21 +24,21 @@ fun MiniPlayer(
     onShowQueue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (state.currentUrl == null) return
-
     val progress by remember {
         derivedStateOf { state.getProgress() }
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        if (state.currentUrl != null) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
 
         Surface(
             modifier = Modifier.fillMaxWidth().clickable { onExpand() },
@@ -52,16 +52,18 @@ fun MiniPlayer(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = state.currentTitle ?: "Unknown",
+                        text = state.currentTitle ?: "No playback",
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "${formatTime(state.currentPosition)} / ${formatTime(state.duration)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (state.currentUrl != null) {
+                        Text(
+                            text = "${formatTime(state.currentPosition)} / ${formatTime(state.duration)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 IconButton(onClick = { state.seekBack() }) {
@@ -239,7 +241,7 @@ fun FullPlayer(
     }
 
     if (showQueue) {
-        QueueSheet(
+        QueueDrawer(
             state = state,
             onDismiss = { showQueue = false }
         )
@@ -255,7 +257,7 @@ fun FullPlayer(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QueueSheet(
+fun QueueDrawer(
     state: MediaPlayerState,
     onDismiss: () -> Unit,
     onDownload: ((QueueItem) -> Unit)? = null,
@@ -264,122 +266,141 @@ fun QueueSheet(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedIndices by remember { mutableStateOf(setOf<Int>()) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isSelectionMode) {
-                    Text("${selectedIndices.size} selected")
-                } else {
-                    Text("Queue (${state.queue.size})")
-                }
-                TextButton(onClick = {
-                    if (isSelectionMode) {
-                        isSelectionMode = false
-                        selectedIndices = setOf()
-                    } else {
-                        isSelectionMode = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onDismiss)
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxHeight().width(360.dp).align(Alignment.CenterEnd),
+            tonalElevation = 3.dp
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                TopAppBar(
+                    title = {
+                        if (isSelectionMode) {
+                            Text("${selectedIndices.size} selected")
+                        } else {
+                            Text("Queue (${state.queue.size})")
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = {
+                            if (isSelectionMode) {
+                                isSelectionMode = false
+                                selectedIndices = setOf()
+                            } else {
+                                isSelectionMode = true
+                            }
+                        }) {
+                            Text(if (isSelectionMode) "Cancel" else "Select")
+                        }
                     }
-                }) {
-                    Text(if (isSelectionMode) "Cancel" else "Select")
-                }
-            }
-        },
-        text = {
-            if (state.queue.isEmpty()) {
-                Text("Queue is empty")
-            } else {
-                LazyColumn {
-                    itemsIndexed(state.queue) { index, item ->
-                        ListItem(
-                            headlineContent = {
-                                Text(
-                                    text = item.title,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = if (index == state.queueIndex)
-                                        MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface
-                                )
-                            },
-                            leadingContent = {
-                                if (isSelectionMode) {
-                                    Checkbox(
-                                        checked = index in selectedIndices,
-                                        onCheckedChange = { checked ->
-                                            selectedIndices = if (checked) selectedIndices + index
-                                            else selectedIndices - index
-                                        }
+                )
+
+                if (state.queue.isEmpty()) {
+                    Box(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Queue is empty", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.weight(1f)) {
+                        itemsIndexed(state.queue) { index, item ->
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        text = item.title,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = if (index == state.queueIndex)
+                                            MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
                                     )
-                                } else if (index == state.queueIndex) {
-                                    Icon(
-                                        Icons.Default.PlayArrow,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            },
-                            trailingContent = {
-                                if (!isSelectionMode) {
-                                    Row {
-                                        if (onDownload != null && !item.isDownloaded) {
-                                            IconButton(onClick = { onDownload(item) }) {
-                                                Icon(Icons.Default.Download, contentDescription = "Download")
+                                },
+                                leadingContent = {
+                                    if (isSelectionMode) {
+                                        Checkbox(
+                                            checked = index in selectedIndices,
+                                            onCheckedChange = { checked ->
+                                                selectedIndices = if (checked) selectedIndices + index
+                                                else selectedIndices - index
+                                            }
+                                        )
+                                    } else if (index == state.queueIndex) {
+                                        Icon(
+                                            Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                trailingContent = {
+                                    if (!isSelectionMode) {
+                                        Row {
+                                            if (onDownload != null && !item.isDownloaded) {
+                                                IconButton(onClick = { onDownload(item) }) {
+                                                    Icon(Icons.Default.Download, contentDescription = "Download")
+                                                }
+                                            }
+                                            IconButton(onClick = { state.removeFromQueue(index) }) {
+                                                Icon(Icons.Default.Close, contentDescription = "Remove")
                                             }
                                         }
-                                        IconButton(onClick = { state.removeFromQueue(index) }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Remove")
-                                        }
+                                    }
+                                },
+                                modifier = Modifier.clickable {
+                                    if (isSelectionMode) {
+                                        selectedIndices = if (index in selectedIndices) selectedIndices - index
+                                        else selectedIndices + index
+                                    } else {
+                                        state.playFromQueue(index)
+                                        onDismiss()
                                     }
                                 }
-                            },
-                            modifier = Modifier.clickable {
-                                if (isSelectionMode) {
-                                    selectedIndices = if (index in selectedIndices) selectedIndices - index
-                                    else selectedIndices + index
-                                } else {
-                                    state.playFromQueue(index)
-                                    onDismiss()
-                                }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
-            }
-        },
-        confirmButton = {
-            Row {
+
                 if (isSelectionMode && selectedIndices.isNotEmpty()) {
-                    TextButton(onClick = {
-                        state.removeSelectedFromQueue(selectedIndices)
-                        selectedIndices = setOf()
-                        isSelectionMode = false
-                    }) {
-                        Text("Delete (${selectedIndices.size})")
-                    }
-                    if (onDownload != null) {
-                        TextButton(onClick = {
-                            selectedIndices.forEach { idx ->
-                                if (idx in state.queue.indices) onDownload(state.queue[idx])
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        if (onDownload != null) {
+                            TextButton(onClick = {
+                                selectedIndices.forEach { idx ->
+                                    if (idx in state.queue.indices) onDownload(state.queue[idx])
+                                }
+                                selectedIndices = setOf()
+                                isSelectionMode = false
+                            }) {
+                                Text("Download")
                             }
+                        }
+                        TextButton(onClick = {
+                            state.removeSelectedFromQueue(selectedIndices)
                             selectedIndices = setOf()
                             isSelectionMode = false
                         }) {
-                            Text("Download")
+                            Text("Delete")
                         }
-                    }
-                } else {
-                    TextButton(onClick = onDismiss) {
-                        Text("Close")
                     }
                 }
             }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

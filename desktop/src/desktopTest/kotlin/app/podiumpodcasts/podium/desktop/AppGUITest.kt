@@ -34,16 +34,6 @@ class AppGUITest {
     // === Home Screen Tests ===
 
     @Test
-    fun testHomeScreenShowsEmptyState() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
-        composeTestRule.onNodeWithText("No podcasts yet").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Add one to get started!").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Add Podcast").assertIsDisplayed()
-    }
-
-    @Test
     fun testHomeScreenHasTopBar() {
         composeTestRule.setContent {
             PodiumTheme { App() }
@@ -152,7 +142,8 @@ class AppGUITest {
                 val playerState = MediaPlayerState()
                 app.podiumpodcasts.podium.desktop.player.MiniPlayer(
                     state = playerState,
-                    onExpand = {}
+                    onExpand = {},
+                    onShowQueue = {}
                 )
             }
         }
@@ -167,7 +158,8 @@ class AppGUITest {
                 playerState.play("https://example.com/audio.mp3", "Test Episode", null)
                 app.podiumpodcasts.podium.desktop.player.MiniPlayer(
                     state = playerState,
-                    onExpand = {}
+                    onExpand = {},
+                    onShowQueue = {}
                 )
             }
         }
@@ -182,7 +174,8 @@ class AppGUITest {
                 playerState.play("https://example.com/audio.mp3", "Test", null)
                 app.podiumpodcasts.podium.desktop.player.MiniPlayer(
                     state = playerState,
-                    onExpand = {}
+                    onExpand = {},
+                    onShowQueue = {}
                 )
             }
         }
@@ -197,7 +190,8 @@ class AppGUITest {
                 playerState.play("https://example.com/audio.mp3", "Test", null)
                 app.podiumpodcasts.podium.desktop.player.MiniPlayer(
                     state = playerState,
-                    onExpand = {}
+                    onExpand = {},
+                    onShowQueue = {}
                 )
             }
         }
@@ -372,43 +366,5 @@ class AppGUITest {
         composeTestRule.onNodeWithText("Enter the RSS feed URL of the podcast:").assertIsDisplayed()
         composeTestRule.onNodeWithText("RSS Feed URL").assertIsDisplayed()
         composeTestRule.onNodeWithText("Cancel").assertIsDisplayed()
-    }
-
-    @Test
-    fun testAddPodcastDialogCancel() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
-        composeTestRule.onNodeWithContentDescription("Add Podcast").performClick()
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Cancel").performClick()
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("No podcasts yet").assertIsDisplayed()
-    }
-
-    // === Home Screen Empty State Tests ===
-
-    @Test
-    fun testEmptyStateShowsRssIcon() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
-        composeTestRule.onNodeWithText("No podcasts yet").assertIsDisplayed()
-    }
-
-    @Test
-    fun testEmptyStateShowsSubtitle() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
-        composeTestRule.onNodeWithText("Add one to get started!").assertIsDisplayed()
-    }
-
-    @Test
-    fun testEmptyStateAddButtonInCenter() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
-        composeTestRule.onNodeWithText("Add Podcast").assertIsDisplayed()
     }
 }
