@@ -99,7 +99,8 @@ fun HistoryScreen(
                                     playerState.play(
                                         url = episode.audioUrl,
                                         title = episode.title,
-                                        artworkUrl = episode.imageUrl
+                                        artworkUrl = episode.imageUrl,
+                                        durationMs = episode.duration * 1000L
                                     )
                                 }) {
                                     Icon(Icons.Default.PlayCircle, contentDescription = "Play")
@@ -119,7 +120,8 @@ fun HistoryScreen(
                                 playerState.play(
                                     url = episode.audioUrl,
                                     title = episode.title,
-                                    artworkUrl = episode.imageUrl
+                                    artworkUrl = episode.imageUrl,
+                                    durationMs = episode.duration * 1000L
                                 )
                             }
                         )

@@ -21,7 +21,7 @@ data class QueueItem(
 
 class MediaPlayerState {
 
-    private val player = JfxMediaPlayer()
+    private val player = AudioPlayer()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var sleepTimerJob: Job? = null
 
@@ -33,6 +33,7 @@ class MediaPlayerState {
         private set
     var volume by mutableStateOf(100)
         private set
+    private var previousVolumeBeforeMute = 100
     var playbackSpeed by mutableFloatStateOf(1.0f)
         private set
     var isLoading by mutableStateOf(false)
@@ -74,14 +75,14 @@ class MediaPlayerState {
         }
     }
 
-    fun play(url: String, title: String? = null, artworkUrl: String? = null) {
-        Logger.i(TAG, "play() title=$title, url=$url")
+    fun play(url: String, title: String? = null, artworkUrl: String? = null, durationMs: Long = 0L) {
+        Logger.i(TAG, "play() title=$title, url=$url, durationMs=$durationMs")
         currentUrl = url
         currentTitle = title
         currentArtworkUrl = artworkUrl
         isLoading = true
         error = null
-        player.play(url)
+        player.play(url, durationMs = durationMs)
     }
 
     fun playFromQueue(index: Int) {
@@ -179,6 +180,15 @@ class MediaPlayerState {
     fun changeVolume(vol: Int) {
         player.setVolume(vol)
         volume = vol
+    }
+
+    fun toggleMute() {
+        if (volume > 0) {
+            previousVolumeBeforeMute = volume
+            changeVolume(0)
+        } else {
+            changeVolume(previousVolumeBeforeMute)
+        }
     }
 
     @Suppress("FunctionName")

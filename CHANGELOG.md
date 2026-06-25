@@ -4,6 +4,22 @@ All notable changes to podium-windows will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0] - 2026-06-25
+
+### Fixed
+- Progress bar position calculation: `totalInputSamples` unit mismatch caused position to advance at half speed for stereo audio
+- Progress bar not syncing to total duration when playback finishes naturally
+- Volume control now functional (was a no-op in custom audio pipeline)
+- M4aDecoder resume: `seekToMs` was a no-op, now restarts playback from correct position
+
+### Added
+- Mute toggle: clicking volume icon mutes/unmutes, restoring previous volume level
+
+### Changed
+- Player thread safety: added `@Volatile` to `isStopped`, `currentVolume`, `isPlaying`, `currentPosition`
+- Player performance: pre-allocated buffers in playback loop (planar, byteOut) to reduce GC pressure
+- Position callback throttled to 300ms intervals to reduce UI refresh overhead
+
 ## [0.1.0] - 2026-06-19
 
 ### Added

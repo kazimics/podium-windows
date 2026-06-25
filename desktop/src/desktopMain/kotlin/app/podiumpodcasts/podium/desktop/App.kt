@@ -52,7 +52,8 @@ private suspend fun playAndRecordHistory(
         playerState.play(
             url = episode.audioUrl,
             title = episode.title,
-            artworkUrl = episode.imageUrl
+            artworkUrl = episode.imageUrl,
+            durationMs = episode.duration * 1000L
         )
         database.history.insert(episode.origin, episode.id)
         Logger.d(TAG, "History recorded for episode: ${episode.id}")

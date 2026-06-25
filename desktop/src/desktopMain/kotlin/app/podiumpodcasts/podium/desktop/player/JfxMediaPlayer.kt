@@ -1,80 +1,18 @@
 package app.podiumpodcasts.podium.desktop.player
 
 import app.podiumpodcasts.podium.utils.Logger
-import javafx.scene.media.Media
-import javafx.scene.media.MediaPlayer
-import javafx.util.Duration
+import kotlinx.coroutines.*
 import java.io.File
 
 private const val TAG = "AudioPlayer"
 
-object NativeLibLoader {
-    private var loaded = false
-
-    fun load() {
-        if (loaded) return
-        synchronized(this) {
-            if (loaded) return
-            try {
-                val nativeDir = File(System.getProperty("user.home"), ".podium/native")
-                nativeDir.mkdirs()
-
-                val nativeDlls = listOf("jfxmedia.dll", "gstreamer-lite.dll", "glib-lite.dll", "fxplugins.dll")
-
-                val jarLocations = listOf(
-                    JfxMediaPlayer::class.java.protectionDomain?.codeSource?.location?.toURI()?.path,
-                    "libs/javafx-media-21.0.2-win.jar",
-                    "../libs/javafx-media-21.0.2-win.jar"
-                )
-
-                var extracted = false
-                for (jarPath in jarLocations) {
-                    if (jarPath != null && jarPath.endsWith(".jar") && File(jarPath).exists()) {
-                        Logger.d(TAG, "Found JAR: $jarPath")
-                        try {
-                            java.util.jar.JarFile(jarPath).use { jar ->
-                                for (dllName in nativeDlls) {
-                                    val entry = jar.getEntry(dllName) ?: continue
-                                    val outFile = File(nativeDir, dllName)
-                                    jar.getInputStream(entry).use { input -> outFile.writeBytes(input.readBytes()) }
-                                    Logger.d(TAG, "Extracted: $dllName (${outFile.length()} bytes)")
-                                    extracted = true
-                                }
-                            }
-                            if (extracted) break
-                        } catch (e: Exception) {
-                            Logger.w(TAG, "Failed to extract from $jarPath: ${e.message}")
-                        }
-                    }
-                }
-
-                for (dllName in nativeDlls) {
-                    val dll = File(nativeDir, dllName)
-                    if (dll.exists()) {
-                        try {
-                            Runtime.getRuntime().load(dll.absolutePath)
-                            Logger.d(TAG, "Loaded: $dllName")
-                        } catch (e: UnsatisfiedLinkError) {
-                            Logger.w(TAG, "Cannot load $dllName: ${e.message}")
-                        }
-                    }
-                }
-
-                loaded = true
-                Logger.i(TAG, "JavaFX native libraries ready")
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to load JavaFX native libraries", e)
-            }
-        }
-    }
-}
-
 class JfxMediaPlayer {
 
-    private var mediaPlayer: MediaPlayer? = null
-    private var pitchPlayer: PitchPlayer? = null
+    private var rubberbandPlayer: RubberbandPlayer? = null
     private var currentUrl: String? = null
     private var currentSpeed = 1.0f
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var seekJob: Job? = null
 
     var isPlaying = false
         private set
@@ -95,88 +33,85 @@ class JfxMediaPlayer {
         Logger.i(TAG, "play() url=$url")
         release()
         currentUrl = url
-        currentSpeed = 1.0f
+        startRubberbandPlayer(url, currentSpeed, 0L)
+    }
 
-        try {
-            NativeLibLoader.load()
-
-            val mediaUrl = if (url.startsWith("http")) url else File(url).toURI().toString()
-            Logger.d(TAG, "Media URI: $mediaUrl")
-
-            val media = Media(mediaUrl)
-            val mp = MediaPlayer(media)
-
-            mp.setOnReady {
-                Logger.i(TAG, "Media ready, duration=${mp.totalDuration.toMillis()}ms")
-                duration = mp.totalDuration.toMillis().toLong()
-                mp.play()
-            }
-
-            mp.setOnPlaying {
-                Logger.d(TAG, "Playback started (JavaFX)")
-                isPlaying = true
-                onPlayStateChanged?.invoke(true)
-                startPositionUpdates(mp)
-            }
-
-            mp.setOnPaused {
-                Logger.d(TAG, "Playback paused")
-                isPlaying = false
-                onPlayStateChanged?.invoke(false)
-            }
-
-            mp.setOnStopped {
-                Logger.d(TAG, "Playback stopped")
-                isPlaying = false
-                onPlayStateChanged?.invoke(false)
-            }
-
-            mp.setOnEndOfMedia {
-                Logger.d(TAG, "Playback finished")
-                isPlaying = false
-                onPlayStateChanged?.invoke(false)
-            }
-
-            mp.setOnError {
-                val errorMsg = mp.error?.message ?: "Unknown error"
-                Logger.e(TAG, "Media error: $errorMsg")
-                onError?.invoke(errorMsg)
-                isPlaying = false
-                onPlayStateChanged?.invoke(false)
-            }
-
-            mediaPlayer = mp
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to create media player", e)
-            onError?.invoke("Failed to play: ${e.message}")
+    private fun startRubberbandPlayer(url: String, speed: Float, startPositionMs: Long) {
+        val pp = RubberbandPlayer()
+        pp.onPlayStateChanged = { playing ->
+            isPlaying = playing
+            onPlayStateChanged?.invoke(playing)
         }
+        pp.onPositionChanged = { pos ->
+            currentPosition = pos
+            onPositionChanged?.invoke(currentPosition, duration)
+        }
+        pp.onError = { msg ->
+            Logger.e(TAG, "RubberbandPlayer error: $msg")
+            onError?.invoke(msg)
+        }
+        rubberbandPlayer = pp
+        pp.play(url, speed, startPositionMs)
     }
 
     fun pause() {
         Logger.d(TAG, "pause()")
-        mediaPlayer?.pause()
+        rubberbandPlayer?.stop()
+        isPlaying = false
+        onPlayStateChanged?.invoke(false)
     }
 
     fun resume() {
         Logger.d(TAG, "resume()")
-        mediaPlayer?.play()
+        if (rubberbandPlayer != null && currentUrl != null) {
+            val pp = rubberbandPlayer ?: return
+            val pos = pp.currentPosition.coerceAtLeast(currentPosition)
+            pp.play(currentUrl!!, currentSpeed, pos)
+            pp.onPlayStateChanged = { playing ->
+                isPlaying = playing
+                onPlayStateChanged?.invoke(playing)
+            }
+            pp.onPositionChanged = { p ->
+                currentPosition = p
+                onPositionChanged?.invoke(currentPosition, duration)
+            }
+            pp.onError = { msg -> onError?.invoke(msg) }
+        }
     }
 
     fun stop() {
         Logger.d(TAG, "stop()")
-        mediaPlayer?.stop()
-        pitchPlayer?.stop()
+        seekJob?.cancel()
+        rubberbandPlayer?.stop()
+        isPlaying = false
+        onPlayStateChanged?.invoke(false)
     }
 
     fun seek(positionMs: Long) {
-        mediaPlayer?.seek(Duration.millis(positionMs.toDouble()))
         currentPosition = positionMs
         onPositionChanged?.invoke(currentPosition, duration)
+        if (rubberbandPlayer != null && currentUrl != null) {
+            seekJob?.cancel()
+            seekJob = scope.launch {
+                delay(100)
+                rubberbandPlayer?.stop()
+                val pp = rubberbandPlayer ?: return@launch
+                pp.play(currentUrl!!, currentSpeed, positionMs)
+                pp.onPlayStateChanged = { playing ->
+                    isPlaying = playing
+                    onPlayStateChanged?.invoke(playing)
+                }
+                pp.onPositionChanged = { pos ->
+                    currentPosition = pos
+                    onPositionChanged?.invoke(currentPosition, duration)
+                }
+                pp.onError = { msg -> onError?.invoke(msg) }
+            }
+        }
     }
 
     fun setVolume(vol: Int) {
         val clamped = vol.coerceIn(0, 100)
-        mediaPlayer?.volume = clamped / 100.0
         this.volume = clamped
     }
 
@@ -184,48 +119,15 @@ class JfxMediaPlayer {
         val clamped = speed.coerceIn(0.25f, 4.0f)
         Logger.d(TAG, "setPlaybackSpeed($clamped)")
         currentSpeed = clamped
-
-        if (clamped == 1.0f) {
-            pitchPlayer?.stop()
-            pitchPlayer = null
-            if (mediaPlayer == null && currentUrl != null) {
-                play(currentUrl!!)
-            } else {
-                mediaPlayer?.rate = 1.0
-            }
-        } else {
-            mediaPlayer?.stop()
-            mediaPlayer = null
-
-            val pp = PitchPlayer()
-            pp.onPlayStateChanged = { playing ->
-                isPlaying = playing
-                onPlayStateChanged?.invoke(playing)
-            }
-            pp.onError = { msg ->
-                onError?.invoke(msg)
-            }
-            pitchPlayer = pp
-            pp.play(currentUrl!!, clamped)
-        }
         this.playbackSpeed = clamped
+        rubberbandPlayer?.setPlaybackSpeed(clamped)
     }
 
     fun release() {
-        mediaPlayer?.dispose()
-        mediaPlayer = null
-        pitchPlayer?.release()
-        pitchPlayer = null
+        seekJob?.cancel()
+        scope.cancel()
+        rubberbandPlayer?.release()
+        rubberbandPlayer = null
         isPlaying = false
-    }
-
-    private fun startPositionUpdates(mp: MediaPlayer) {
-        mp.currentTimeProperty().addListener { _, _, newTime ->
-            val pos = newTime.toMillis().toLong()
-            if (pos >= 0) {
-                currentPosition = pos
-                onPositionChanged?.invoke(currentPosition, duration)
-            }
-        }
     }
 }

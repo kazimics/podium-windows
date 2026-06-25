@@ -75,7 +75,7 @@ fun MiniPlayer(
                 }
 
                 IconButton(onClick = { state.seekForward() }) {
-                    Icon(Icons.Default.Forward30, contentDescription = "Seek Forward")
+                    Icon(Icons.Default.Forward10, contentDescription = "Seek Forward")
                 }
             }
         }
@@ -193,7 +193,7 @@ fun FullPlayer(
 
             IconButton(onClick = { state.seekForward() }) {
                 Icon(
-                    Icons.Default.Forward30,
+                    Icons.Default.Forward10,
                     contentDescription = "Seek Forward",
                     modifier = Modifier.size(32.dp)
                 )
@@ -227,7 +227,8 @@ fun FullPlayer(
 
             VolumeControl(
                 currentVolume = state.volume,
-                onVolumeChange = { state.changeVolume(it) }
+                onVolumeChange = { state.changeVolume(it) },
+                onToggleMute = { state.toggleMute() }
             )
         }
     }
@@ -410,7 +411,8 @@ private fun SpeedSelector(
 @Composable
 private fun VolumeControl(
     currentVolume: Int,
-    onVolumeChange: (Int) -> Unit
+    onVolumeChange: (Int) -> Unit,
+    onToggleMute: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -418,8 +420,8 @@ private fun VolumeControl(
     ) {
         Icon(
             if (currentVolume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-            contentDescription = "Volume",
-            modifier = Modifier.size(20.dp)
+            contentDescription = if (currentVolume > 0) "Mute" else "Unmute",
+            modifier = Modifier.size(20.dp).clickable { onToggleMute() }
         )
         Slider(
             value = currentVolume.toFloat() / 100f,

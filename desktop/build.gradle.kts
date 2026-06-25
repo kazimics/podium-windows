@@ -32,6 +32,13 @@ kotlin {
 
                 // JLayer for MP3 decoding (pitch-preserving speed)
                 implementation(files("../libs/jlayer.jar"))
+                
+                // Rubberband native binding (JNA)
+                implementation(files("../libs/jna-5.6.0.jar"))
+                implementation(files("../libs/jna-platform-5.6.0.jar"))
+                
+                // JAADec for AAC/M4A decoding (Java Sound SPI)
+                implementation(files("../libs/jaad-0.9.4.jar"))
             }
         }
         val desktopTest by getting {

@@ -1,5 +1,6 @@
 package app.podiumpodcasts.podium.manager
 
+import app.podiumpodcasts.podium.api.apple.ApplePodcastClient
 import app.podiumpodcasts.podium.api.rss.FetchPodcastClient
 import app.podiumpodcasts.podium.api.rss.FetchPodcastClientResult
 import app.podiumpodcasts.podium.data.AppDatabase
@@ -17,23 +18,45 @@ sealed class AddPodcastResult {
 
 class PodcastManager(
     private val db: AppDatabase,
-    private val fetchPodcastClient: FetchPodcastClient = FetchPodcastClient()
+    private val fetchPodcastClient: FetchPodcastClient = FetchPodcastClient(),
+    private val appleClient: ApplePodcastClient = ApplePodcastClient()
 ) {
     suspend fun addPodcast(origin: String, seedColor: Int?): AddPodcastResult {
         Logger.i(TAG, "addPodcast: origin=$origin")
-        db.podcasts.getByOrigin(origin)?.let {
+
+        val resolvedOrigin: String
+        val displayOrigin: String
+
+        if (origin.startsWith("itunes-lookup:")) {
+            val idStr = origin.removePrefix("itunes-lookup:")
+            val id = idStr.toLongOrNull()
+            if (id == null) {
+                throw IllegalArgumentException("Invalid iTunes ID: $idStr")
+            }
+            Logger.d(TAG, "Resolving iTunes ID: $id")
+            val preview = appleClient.lookup.lookupById(id)
+                ?: throw Exception("iTunes lookup failed for ID: $id")
+            resolvedOrigin = preview.fetchUrl
+            displayOrigin = resolvedOrigin
+            Logger.d(TAG, "Resolved to RSS feed: $resolvedOrigin")
+        } else {
+            resolvedOrigin = origin
+            displayOrigin = origin
+        }
+
+        db.podcasts.getByOrigin(displayOrigin)?.let {
             Logger.d(TAG, "Podcast already exists: ${it.title}")
             return AddPodcastResult.Duplicate(it)
         }
 
-        Logger.d(TAG, "Fetching RSS feed from: $origin")
-        val response = fetchPodcastClient.fetchNoCache(origin)
+        Logger.d(TAG, "Fetching RSS feed from: $resolvedOrigin")
+        val response = fetchPodcastClient.fetchNoCache(resolvedOrigin)
         if (response !is FetchPodcastClientResult.Success) {
             Logger.e(TAG, "Failed to fetch RSS feed: $response")
             throw Exception(response.toString())
         }
 
-        val podcast = RssConverter.toPodcast(response.rssChannel, origin, response.fileSize, seedColor)
+        val podcast = RssConverter.toPodcast(response.rssChannel, displayOrigin, response.fileSize, seedColor)
         val episodes = response.rssChannel.items.map { RssConverter.toPodcastEpisode(it, podcast) }
         Logger.i(TAG, "Parsed podcast: ${podcast.title}, ${episodes.size} episodes")
 

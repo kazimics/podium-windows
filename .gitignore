@@ -31,9 +31,11 @@ test-result/
 # Mimocode (AI assistant)
 .mimocode/
 
-# Graphify (knowledge graph)
-graphify-out/
+# codegraph
+.codegraph/
 
 # Logs
 *.log
 debuglog/
+
+ScreenPrint/
