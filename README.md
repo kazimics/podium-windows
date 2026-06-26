@@ -6,7 +6,7 @@
 English | [中文](README_zh.md)
 
 **podium-windows** is a modern, open-source Podcast app for **Windows**, written in Kotlin using Compose Multiplatform.
-The app uses **Material 3** design and **JavaFX Media** for audio playback.
+The app uses **Material 3** design and custom audio playback with **Rubberband** for pitch-preserving speed control.
 
 This project is a Windows desktop port of [aimok04/podium](https://github.com/aimok04/podium), an Android podcast app.
 
@@ -67,7 +67,7 @@ gradlew.bat :desktop:desktopTest
 | Layer | Technology |
 |-------|-----------|
 | UI | Compose Multiplatform + Material 3 |
-| Media | JavaFX Media + JLayer |
+| Audio | Custom player (Java Sound API + Rubberband + JLayer + JAADec) |
 | Image Loading | Coil 3 |
 | Database | JDBC SQLite |
 | Network | Ktor |
