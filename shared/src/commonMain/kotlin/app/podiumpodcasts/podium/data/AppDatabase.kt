@@ -261,9 +261,11 @@ class HistoryDao(private val conn: Connection) {
         val rs = conn.createStatement().executeQuery(
             """SELECT h.id, h.origin, h.episodeId, h.timestamp,
                e.title as epTitle, e.audioUrl as epAudioUrl, e.imageUrl as epImageUrl,
-               e.podcastTitle as epPodcastTitle, e.duration as epDuration
+               e.podcastTitle as epPodcastTitle, e.duration as epDuration,
+               p.imageUrl as podcastImageUrl
                FROM podcastHistory h
                LEFT JOIN podcastEpisode e ON h.episodeId = e.id
+               LEFT JOIN podcast p ON h.origin = p.origin
                ORDER BY h.timestamp DESC"""
         )
         val list = mutableListOf<Pair<PodcastHistory, PodcastEpisode?>>()
@@ -276,7 +278,7 @@ class HistoryDao(private val conn: Connection) {
             val episode = if (epTitle != null) PodcastEpisode(
                 id = history.episodeId, guid = "", origin = history.origin,
                 link = "", title = epTitle, description = "",
-                imageUrl = rs.getString("epImageUrl"), author = "",
+                imageUrl = rs.getString("epImageUrl") ?: rs.getString("podcastImageUrl"), author = "",
                 pubDate = 0, duration = rs.getInt("epDuration"),
                 audioUrl = rs.getString("epAudioUrl") ?: "",
                 podcastTitle = rs.getString("epPodcastTitle") ?: ""
@@ -419,6 +421,25 @@ class DownloadDao(private val conn: Connection) {
         val rs = conn.createStatement().executeQuery("SELECT episodeId FROM podcastDownload")
         val ids = mutableSetOf<String>()
         while (rs.next()) { ids.add(rs.getString("episodeId")) }
+        ids
+    }
+
+    suspend fun getAllValidDownloadedIds(): Set<String> = withContext(Dispatchers.IO) {
+        val rs = conn.createStatement().executeQuery("SELECT episodeId, filePath FROM podcastDownload")
+        val ids = mutableSetOf<String>()
+        val toDelete = mutableListOf<String>()
+        while (rs.next()) {
+            val episodeId = rs.getString("episodeId")
+            val filePath = rs.getString("filePath")
+            if (java.io.File(filePath).exists()) {
+                ids.add(episodeId)
+            } else {
+                toDelete.add(episodeId)
+            }
+        }
+        for (id in toDelete) {
+            delete(id)
+        }
         ids
     }
 

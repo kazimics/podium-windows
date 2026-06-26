@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -11,6 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import app.podiumpodcasts.podium.api.apple.ApplePodcastClient
 import app.podiumpodcasts.podium.api.model.PodcastPreviewModel
@@ -18,6 +21,7 @@ import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.utils.Logger
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 private const val TAG = "DiscoverScreen"
@@ -131,7 +135,7 @@ fun DiscoverScreen(
                 }
             } else {
                 val podcasts = if (searchQuery.isNotEmpty()) searchResults else topPodcasts
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(podcasts) { preview ->
                         val isAdded = preview.fetchUrl in addedOrigins
 
@@ -150,7 +154,14 @@ fun DiscoverScreen(
                                 }
                             },
                             leadingContent = {
-                                Icon(Icons.Default.Podcasts, null, Modifier.size(48.dp))
+                                AsyncImage(
+                                    model = preview.imageUrl,
+                                    contentDescription = preview.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
                             },
                             trailingContent = {
                                 if (!isAdded) {

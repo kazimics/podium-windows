@@ -33,6 +33,10 @@ kotlin {
                 // Settings
                 implementation(libs.multiplatform.settings.core)
                 implementation(libs.multiplatform.settings.coroutines)
+
+                // Image loading
+                implementation(libs.coil.compose)
+                implementation(libs.coil.network.okhttp)
             }
         }
 

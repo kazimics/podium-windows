@@ -39,6 +39,10 @@ kotlin {
                 
                 // JAADec for AAC/M4A decoding (Java Sound SPI)
                 implementation(files("../libs/jaad-0.9.4.jar"))
+
+                // Image loading
+                implementation(libs.coil.compose)
+                implementation(libs.coil.network.okhttp)
             }
         }
         val desktopTest by getting {

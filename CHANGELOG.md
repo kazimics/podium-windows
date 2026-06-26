@@ -4,6 +4,16 @@ All notable changes to podium-windows will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0] - 2026-06-26
+
+### Added
+- Podcast cover images display on Home, Discover, History screens, and episode lists
+- Coil 3 image loading library for network image fetching
+
+### Fixed
+- Download status showing completed when local file no longer exists
+- History list now falls back to podcast cover when episode has no image
+
 ## [0.1.0] - 2026-06-25
 
 ### Fixed
