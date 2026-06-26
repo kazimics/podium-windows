@@ -14,6 +14,8 @@ class SubscriptionManager(
     }
 
     suspend fun unsubscribe(origin: String) {
+        db.episodes.deleteByOrigin(origin)
+        db.podcasts.delete(origin)
         db.subscriptions.delete(origin)
     }
 

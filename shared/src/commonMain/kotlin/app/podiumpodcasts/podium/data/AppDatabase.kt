@@ -192,6 +192,12 @@ class EpisodeDao(private val conn: Connection) {
         list
     }
 
+    suspend fun deleteByOrigin(origin: String) = withContext(Dispatchers.IO) {
+        conn.prepareStatement("DELETE FROM podcastEpisode WHERE origin = ?").apply {
+            setString(1, origin); executeUpdate()
+        }
+    }
+
     suspend fun insert(episode: PodcastEpisode) = withContext(Dispatchers.IO) {
         val ps = conn.prepareStatement(
             "INSERT OR IGNORE INTO podcastEpisode (id, guid, origin, link, title, description, imageUrl, author, pubDate, duration, audioUrl, podcastTitle, imageSeedColor, new) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
