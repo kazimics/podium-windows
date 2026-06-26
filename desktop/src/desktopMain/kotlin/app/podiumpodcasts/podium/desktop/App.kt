@@ -25,6 +25,7 @@ import app.podiumpodcasts.podium.desktop.player.QueueDrawer
 import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
+import app.podiumpodcasts.podium.manager.SubscriptionManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import app.podiumpodcasts.podium.utils.Logger
 import app.podiumpodcasts.podium.utils.Settings
@@ -86,6 +87,7 @@ fun App() {
     }
 
     val podcastManager = remember { PodcastManager(database) }
+    val subscriptionManager = remember { SubscriptionManager(database) }
     var downloadPath by remember { mutableStateOf(Settings.getDownloadPath()) }
     val downloadManager = remember(downloadPath) {
         val downloadsDir = File(downloadPath)
@@ -162,11 +164,15 @@ fun App() {
                     )
                     currentScreen == "home" -> HomeScreen(
                         podcasts = podcasts,
+                        database = database,
+                        subscriptionManager = subscriptionManager,
+                        scope = scope,
                         onPodcastClick = { podcast -> selectedPodcast = podcast },
                         onAddPodcast = { showAddDialog = true },
                         onDiscover = { currentScreen = "discover" },
                         onHistory = { currentScreen = "history" },
-                        onSettings = { currentScreen = "settings" }
+                        onSettings = { currentScreen = "settings" },
+                        onPodcastsChanged = { newPodcasts -> podcasts = newPodcasts }
                     )
                     currentScreen == "discover" -> DiscoverScreen(
                         database = database,
@@ -238,28 +244,72 @@ fun App() {
 @Composable
 private fun HomeScreen(
     podcasts: List<Podcast>,
+    database: AppDatabase,
+    subscriptionManager: SubscriptionManager,
+    scope: kotlinx.coroutines.CoroutineScope,
     onPodcastClick: (Podcast) -> Unit,
     onAddPodcast: () -> Unit,
     onDiscover: () -> Unit,
     onHistory: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onPodcastsChanged: (List<Podcast>) -> Unit
 ) {
+    var isEditing by remember { mutableStateOf(false) }
+    var selectedPodcasts by remember { mutableStateOf(setOf<String>()) }
+    var showBatchUnsubscribeDialog by remember { mutableStateOf(false) }
+    var showUnsubscribeDialog by remember { mutableStateOf(false) }
+    var podcastToUnsubscribe by remember { mutableStateOf<Podcast?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(Strings["home_title"]) },
+                title = {
+                    if (isEditing) {
+                        Text("已选择 ${selectedPodcasts.size} 个")
+                    } else {
+                        Text(Strings["home_title"])
+                    }
+                },
+                navigationIcon = {
+                    if (isEditing) {
+                        IconButton(onClick = {
+                            isEditing = false
+                            selectedPodcasts = emptySet()
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "取消")
+                        }
+                    }
+                },
                 actions = {
-                    IconButton(onClick = onDiscover) {
-                        Icon(Icons.Default.Explore, contentDescription = Strings["nav_discover"])
-                    }
-                    IconButton(onClick = onHistory) {
-                        Icon(Icons.Default.History, contentDescription = Strings["nav_history"])
-                    }
-                    IconButton(onClick = onSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = Strings["nav_settings"])
-                    }
-                    IconButton(onClick = onAddPodcast) {
-                        Icon(Icons.Default.Add, contentDescription = Strings["home_add_podcast"])
+                    if (isEditing) {
+                        IconButton(onClick = {
+                            if (selectedPodcasts.size == podcasts.size) {
+                                selectedPodcasts = emptySet()
+                            } else {
+                                selectedPodcasts = podcasts.map { it.origin }.toSet()
+                            }
+                        }) {
+                            Icon(Icons.Default.SelectAll, contentDescription = "全选")
+                        }
+                        IconButton(onClick = { showBatchUnsubscribeDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "删除选中")
+                        }
+                    } else {
+                        IconButton(onClick = onDiscover) {
+                            Icon(Icons.Default.Explore, contentDescription = Strings["nav_discover"])
+                        }
+                        IconButton(onClick = onHistory) {
+                            Icon(Icons.Default.History, contentDescription = Strings["nav_history"])
+                        }
+                        IconButton(onClick = onSettings) {
+                            Icon(Icons.Default.Settings, contentDescription = Strings["nav_settings"])
+                        }
+                        IconButton(onClick = onAddPodcast) {
+                            Icon(Icons.Default.Add, contentDescription = Strings["home_add_podcast"])
+                        }
+                        IconButton(onClick = { isEditing = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "编辑")
+                        }
                     }
                 }
             )
@@ -290,21 +340,107 @@ private fun HomeScreen(
                         headlineContent = { Text(podcast.title) },
                         supportingContent = { Text(podcast.author) },
                         leadingContent = {
-                            AsyncImage(
-                                model = podcast.imageUrl,
-                                contentDescription = podcast.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                            )
+                            if (isEditing) {
+                                Checkbox(
+                                    checked = podcast.origin in selectedPodcasts,
+                                    onCheckedChange = { checked ->
+                                        selectedPodcasts = if (checked) {
+                                            selectedPodcasts + podcast.origin
+                                        } else {
+                                            selectedPodcasts - podcast.origin
+                                        }
+                                    }
+                                )
+                            } else {
+                                AsyncImage(
+                                    model = podcast.imageUrl,
+                                    contentDescription = podcast.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            }
                         },
-                        modifier = Modifier.clickable { onPodcastClick(podcast) }
+                        trailingContent = {
+                            if (!isEditing) {
+                                IconButton(onClick = {
+                                    podcastToUnsubscribe = podcast
+                                    showUnsubscribeDialog = true
+                                }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "取消订阅")
+                                }
+                            }
+                        },
+                        modifier = Modifier.clickable {
+                            if (!isEditing) {
+                                onPodcastClick(podcast)
+                            }
+                        }
                     )
                     HorizontalDivider()
                 }
             }
         }
+    }
+
+    if (showUnsubscribeDialog && podcastToUnsubscribe != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showUnsubscribeDialog = false
+                podcastToUnsubscribe = null
+            },
+            title = { Text("取消订阅") },
+            text = { Text("确定要取消订阅 \"${podcastToUnsubscribe!!.title}\" 吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        subscriptionManager.unsubscribe(podcastToUnsubscribe!!.origin)
+                        onPodcastsChanged(database.podcasts.getAllSync())
+                    }
+                    showUnsubscribeDialog = false
+                    podcastToUnsubscribe = null
+                }) {
+                    Text("取消订阅")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showUnsubscribeDialog = false
+                    podcastToUnsubscribe = null
+                }) {
+                    Text(Strings["dialog_cancel"])
+                }
+            }
+        )
+    }
+
+    if (showBatchUnsubscribeDialog) {
+        AlertDialog(
+            onDismissRequest = { showBatchUnsubscribeDialog = false },
+            title = { Text("批量取消订阅") },
+            text = { Text("确定要取消订阅选中的 ${selectedPodcasts.size} 个播客吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        selectedPodcasts.forEach { origin ->
+                            subscriptionManager.unsubscribe(origin)
+                        }
+                        onPodcastsChanged(database.podcasts.getAllSync())
+                        selectedPodcasts = emptySet()
+                        isEditing = false
+                    }
+                    showBatchUnsubscribeDialog = false
+                }) {
+                    Text("取消订阅")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchUnsubscribeDialog = false }) {
+                    Text(Strings["dialog_cancel"])
+                }
+            }
+        )
     }
 }
 
