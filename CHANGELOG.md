@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Coil 3 image loading library for network image fetching
 - Multi-language support (English / Simplified Chinese)
 - Language selector in Settings screen
+- Unsubscribe functionality with confirmation dialog on podcast detail screen
+- Edit mode on Home screen for batch unsubscribe operations
 
 ### Fixed
 - Download status showing completed when local file no longer exists
