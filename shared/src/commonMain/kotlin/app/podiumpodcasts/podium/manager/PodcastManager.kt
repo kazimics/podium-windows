@@ -37,7 +37,7 @@ class PodcastManager(
             val preview = appleClient.lookup.lookupById(id)
                 ?: throw Exception("iTunes lookup failed for ID: $id")
             resolvedOrigin = preview.fetchUrl
-            displayOrigin = resolvedOrigin
+            displayOrigin = origin
             Logger.d(TAG, "Resolved to RSS feed: $resolvedOrigin")
         } else {
             resolvedOrigin = origin

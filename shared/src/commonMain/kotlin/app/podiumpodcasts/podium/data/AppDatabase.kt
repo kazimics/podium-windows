@@ -134,6 +134,13 @@ class PodcastDao(private val conn: Connection) {
         list
     }
 
+    suspend fun getAllOrigins(): Set<String> = withContext(Dispatchers.IO) {
+        val rs = conn.createStatement().executeQuery("SELECT origin FROM podcast")
+        val origins = mutableSetOf<String>()
+        while (rs.next()) origins.add(rs.getString("origin"))
+        origins
+    }
+
     suspend fun getByOrigin(origin: String): Podcast? = withContext(Dispatchers.IO) {
         val ps = conn.prepareStatement("SELECT * FROM podcast WHERE origin = ?")
         ps.setString(1, origin)

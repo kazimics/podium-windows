@@ -46,4 +46,17 @@ class Lookup(
         )
     }
 
+    suspend fun batchLookupFeedUrls(ids: List<Long>): Map<Long, String> {
+        if (ids.isEmpty()) return emptyMap()
+        val idParam = ids.joinToString(",")
+        val body = client.httpClient.get("https://itunes.apple.com/lookup?id=$idParam&media=podcast").body<String>()
+        val response = json.decodeFromString<LookupResponse>(body)
+        return response.results.mapNotNull { result ->
+            val feedUrl = result.feedUrl ?: return@mapNotNull null
+            val id = result.trackViewUrl.substringAfterLast("/id").substringBefore("/").toLongOrNull()
+                ?: return@mapNotNull null
+            id to feedUrl
+        }.toMap()
+    }
+
 }

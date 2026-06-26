@@ -13,11 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Language selector in Settings screen
 - Unsubscribe functionality with confirmation dialog on podcast detail screen
 - Edit mode on Home screen for batch unsubscribe operations
+- Subscribe button on Discover page now shows loading spinner during subscription
+- Subscribe success icon aligns with add button for consistent layout
+- Discover page now correctly shows subscribed podcasts with check icon across sessions
 
 ### Fixed
 - Download status showing completed when local file no longer exists
 - History list now falls back to podcast cover when episode has no image
 - All GUI tests now pass with Coil image loading integration
+- Discover page subscribe button lacked loading state feedback
+- Subscribe success icon misaligned with add button icon
+- Already-subscribed podcasts still showing add button on Discover page
+- Imported podcasts not recognized as subscribed on Discover page
 
 ## [0.1.0] - 2026-06-25
 

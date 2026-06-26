@@ -42,7 +42,8 @@ fun DiscoverScreen(
     var topPodcasts by remember { mutableStateOf(emptyList<PodcastPreviewModel>()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var addedOrigins by remember { mutableStateOf(setOf<String>()) }
+    var subscribedOrigins by remember { mutableStateOf(setOf<String>()) }
+    var subscribingOrigins by remember { mutableStateOf(setOf<String>()) }
 
     DisposableEffect(Unit) {
         onDispose { appleClient.close() }
@@ -50,13 +51,22 @@ fun DiscoverScreen(
 
     LaunchedEffect(Unit) {
         isLoading = true
-        Logger.i(TAG, "Loading top podcasts from Apple Podcasts")
+        Logger.i(TAG, "Loading top podcasts and subscriptions")
         try {
+            val dbOrigins = database.podcasts.getAllOrigins()
             topPodcasts = appleClient.topPodcasts.load()
-            Logger.i(TAG, "Loaded ${topPodcasts.size} top podcasts")
+
+            val itunesIds = topPodcasts
+                .filter { it.fetchUrl.startsWith("itunes-lookup:") }
+                .mapNotNull { it.fetchUrl.removePrefix("itunes-lookup:").toLongOrNull() }
+
+            val resolvedUrls = appleClient.lookup.batchLookupFeedUrls(itunesIds).values.toSet()
+
+            subscribedOrigins = dbOrigins + resolvedUrls
+            Logger.i(TAG, "Loaded ${dbOrigins.size} DB origins, resolved ${resolvedUrls.size} iTunes IDs")
         } catch (e: Exception) {
-            Logger.e(TAG, "Failed to load top podcasts", e)
-            errorMessage = "Failed to load top podcasts: ${e.message}"
+            Logger.e(TAG, "Failed to load data", e)
+            errorMessage = "Failed to load: ${e.message}"
         }
         isLoading = false
     }
@@ -138,7 +148,8 @@ fun DiscoverScreen(
                 val podcasts = if (searchQuery.isNotEmpty()) searchResults else topPodcasts
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(podcasts) { preview ->
-                        val isAdded = preview.fetchUrl in addedOrigins
+                        val isSubscribed = preview.fetchUrl in subscribedOrigins
+                        val isSubscribing = preview.fetchUrl in subscribingOrigins
 
                         ListItem(
                             headlineContent = { Text(preview.title) },
@@ -165,30 +176,42 @@ fun DiscoverScreen(
                                 )
                             },
                             trailingContent = {
-                                if (!isAdded) {
+                                if (isSubscribed) {
+                                    IconButton(enabled = false, onClick = {}) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = Strings["discover_added"],
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else if (isSubscribing) {
+                                    IconButton(enabled = false, onClick = {}) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                } else {
                                     IconButton(onClick = {
                                         scope.launch {
                                             Logger.i(TAG, "Adding podcast: ${preview.title} (${preview.fetchUrl})")
+                                            subscribingOrigins = subscribingOrigins + preview.fetchUrl
                                             try {
                                                 val result = podcastManager.addPodcast(preview.fetchUrl, null)
                                                 if (result is AddPodcastResult.Created || result is AddPodcastResult.Duplicate) {
-                                                    addedOrigins = addedOrigins + preview.fetchUrl
+                                                    subscribedOrigins = subscribedOrigins + preview.fetchUrl
                                                     Logger.i(TAG, "Podcast added successfully: ${preview.title}")
                                                 }
                                             } catch (e: Exception) {
                                                 Logger.e(TAG, "Failed to add podcast: ${preview.title}", e)
                                                 errorMessage = "Failed to add: ${e.message}"
+                                            } finally {
+                                                subscribingOrigins = subscribingOrigins - preview.fetchUrl
                                             }
                                         }
                                     }) {
                                         Icon(Icons.Default.Add, contentDescription = Strings["discover_add"])
                                     }
-                                } else {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = Strings["discover_added"],
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
                                 }
                             }
                         )

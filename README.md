@@ -21,7 +21,7 @@ This project is a Windows desktop port of [aimok04/podium](https://github.com/ai
 ## Notable Features
 
 - **Download** your favorite episodes for offline listening.
-- **Discover** new podcasts on the *Discover* tab *(powered by Apple Podcasts)*.
+- **Discover** new podcasts on the *Discover* tab *(powered by Apple Podcasts)* with subscribe loading feedback.
 - **Playback controls** - play/pause, seek, playback speed adjustment.
 - **Sleep timer** - automatically pause after a set duration.
 - **Queue management** - build and manage your playback queue.
