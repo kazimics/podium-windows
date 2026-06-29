@@ -4,6 +4,31 @@ All notable changes to podium-windows will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0] - 2026-06-29
+
+### Added
+- `AudioPlayerEngine` interface for abstracting audio playback implementations
+- `MpvAudioPlayerEngine` — new audio engine using libmpv via JNA
+- `MpvApi` — JNA interface for libmpv C API
+- `MpvNativeLoader` — native library loader for mpv-1.dll
+- `MpvAudioPlayerEngineTest` — unit tests for mpv engine
+- `PlaybackState` enum and `PlayerMetadata` data class for engine state tracking
+
+### Changed
+- Audio playback engine switched from Java Sound + Rubberband to libmpv
+- `MediaPlayerState` now uses `MpvAudioPlayerEngine` as default engine
+- Default engine can be overridden via constructor parameter
+- Removed JavaFX MediaPlayer dependency (was unused for audio)
+
+### Removed
+- `JavaAudioPlayerEngine` (legacy Java Sound + Rubberband implementation)
+- `RubberbandApi`, `RubberbandStretcher`, `RubberbandNativeLoader`
+- `AudioDecoder`, `Mp3Decoder`, `M4aDecoder`, `SpiDecoder`, `JAADecAudioDecoder`
+- `PitchPlayer`, `WsolaTimeStretch`, `JfxMediaPlayer`, `RubberbandPlayer`
+- `PlaybackTest` (legacy JavaFX media test)
+- Native libraries: rubberband.dll, libfftw3-3.dll, libsamplerate-0.dll, libstdc++-6.dll, libgcc_s_seh-1.dll, libwinpthread-1.dll
+- JARs: jlayer.jar, jaad-0.9.4.jar, mp3spi.jar, javafx-*.jar
+
 ## [0.1.0] - 2026-06-26
 
 ### Added

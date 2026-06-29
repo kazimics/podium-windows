@@ -25,20 +25,9 @@ kotlin {
                 // JDBC SQLite for desktop
                 implementation("org.xerial:sqlite-jdbc:3.46.1.0")
 
-                // JavaFX for audio playback (base + graphics + media)
-                implementation(files("../libs/javafx-base-21.0.2-win.jar"))
-                implementation(files("../libs/javafx-graphics-21.0.2-win.jar"))
-                implementation(files("../libs/javafx-media-21.0.2-win.jar"))
-
-                // JLayer for MP3 decoding (pitch-preserving speed)
-                implementation(files("../libs/jlayer.jar"))
-                
-                // Rubberband native binding (JNA)
+                // JNA for libmpv binding
                 implementation(files("../libs/jna-5.6.0.jar"))
                 implementation(files("../libs/jna-platform-5.6.0.jar"))
-                
-                // JAADec for AAC/M4A decoding (Java Sound SPI)
-                implementation(files("../libs/jaad-0.9.4.jar"))
 
                 // Image loading
                 implementation(libs.coil.compose)

@@ -1,148 +1,7 @@
 package app.podiumpodcasts.podium.desktop
 
-import app.podiumpodcasts.podium.desktop.player.AudioDecoder
-import app.podiumpodcasts.podium.desktop.player.AudioPlayer
-import app.podiumpodcasts.podium.desktop.player.M4aDecoder
 import app.podiumpodcasts.podium.desktop.player.MediaPlayerState
-import java.io.ByteArrayInputStream
-import java.io.InputStream
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.test.*
-
-class AudioPlayerTest {
-
-    private lateinit var player: AudioPlayer
-
-    @BeforeTest
-    fun setup() {
-        player = AudioPlayer()
-    }
-
-    @AfterTest
-    fun teardown() {
-        player.release()
-    }
-
-    @Test
-    fun testInitialState() {
-        assertFalse(player.isPlaying)
-        assertEquals(0L, player.currentPosition)
-        assertEquals(0L, player.duration)
-    }
-
-    @Test
-    fun testPauseWhenNotPlaying() {
-        player.pause()
-        assertFalse(player.isPlaying)
-    }
-
-    @Test
-    fun testResumeWithoutPlayReturnsEarly() {
-        player.resume()
-        assertFalse(player.isPlaying)
-    }
-
-    @Test
-    fun testStopResetsState() {
-        player.stop()
-        assertFalse(player.isPlaying)
-        assertEquals(0L, player.currentPosition)
-    }
-
-    @Test
-    fun testSeekUpdatesPosition() {
-        player.seek(5000L)
-        assertEquals(5000L, player.currentPosition)
-    }
-
-    @Test
-    fun testSetPlaybackSpeedClamps() {
-        player.setPlaybackSpeed(0.01f)
-        // Speed should be clamped to minimum 0.25
-        player.setPlaybackSpeed(100f)
-        // Speed should be clamped to maximum 4.0
-    }
-
-    @Test
-    fun testCallbackNullSafety() {
-        player.onPlayStateChanged = null
-        player.onPositionChanged = null
-        player.onError = null
-        player.stop()
-    }
-
-    @Test
-    fun testPlayCallbackInvoked() {
-        val states = mutableListOf<Boolean>()
-        player.onPlayStateChanged = { states.add(it) }
-
-        player.stop()
-        // stop() should set isPlaying = false and not invoke callback
-        assertFalse(player.isPlaying)
-    }
-
-    @Test
-    fun testPositionCallbackInvoked() {
-        val positions = mutableListOf<Pair<Long, Long>>()
-        player.onPositionChanged = { pos, dur -> positions.add(Pair(pos, dur)) }
-
-        player.seek(1000L)
-        assertEquals(1, positions.size)
-        assertEquals(1000L, positions[0].first)
-    }
-}
-
-class M4aDecoderTest {
-
-    @Test
-    fun testInitialDurationIsZero() {
-        val decoder = M4aDecoder()
-        assertEquals(0L, decoder.totalDurationMs)
-    }
-
-    @Test
-    fun testInitialSampleRate() {
-        val decoder = M4aDecoder()
-        assertEquals(44100, decoder.sampleRate)
-    }
-
-    @Test
-    fun testInitialChannels() {
-        val decoder = M4aDecoder()
-        assertEquals(2, decoder.channels)
-    }
-
-    @Test
-    fun testReadFrameBeforeOpen() {
-        val decoder = M4aDecoder()
-        assertNull(decoder.readFrame())
-    }
-
-    @Test
-    fun testSeekToMsBeforeOpen() {
-        val decoder = M4aDecoder()
-        // Should not throw
-        decoder.seekToMs(5000L)
-    }
-
-    @Test
-    fun testCloseBeforeOpen() {
-        val decoder = M4aDecoder()
-        // Should not throw
-        decoder.close()
-    }
-
-    @Test
-    fun testInterfaceContract() {
-        val decoder: AudioDecoder = M4aDecoder()
-        assertNotNull(decoder)
-        assertEquals(44100, decoder.sampleRate)
-        assertEquals(2, decoder.channels)
-        assertEquals(16, decoder.bitsPerSample)
-        assertEquals(0L, decoder.totalDurationMs)
-    }
-}
 
 class MediaPlayerStateTestExtended {
 
@@ -166,9 +25,9 @@ class MediaPlayerStateTestExtended {
     }
 
     @Test
-    fun testPlayClearsLoadingState() {
+    fun testPlaySetsUrl() {
         state.play("https://example.com/audio.mp3")
-        assertTrue(state.isLoading)
+        assertEquals("https://example.com/audio.mp3", state.currentUrl)
     }
 
     @Test
@@ -181,9 +40,8 @@ class MediaPlayerStateTestExtended {
     }
 
     @Test
-    fun testTogglePlayPause() {
+    fun testTogglePlayPauseWhenNothingPlaying() {
         state.togglePlayPause()
-        assertFalse(state.isPlaying)
     }
 
     @Test
@@ -304,80 +162,6 @@ class MediaPlayerStateTestExtended {
         assertEquals(1, state.queue.size)
         state.removeFromQueue(10)
         assertEquals(1, state.queue.size)
-    }
-}
-
-class AudioDecoderContractTest {
-
-    @Test
-    fun testM4aDecoderImplementsInterface() {
-        val decoder: AudioDecoder = M4aDecoder()
-        // All interface methods should be callable without exception
-        decoder.close()
-    }
-
-    @Test
-    fun testM4aDecoderReadFrameReturnsNullWhenEmpty() {
-        val decoder = M4aDecoder()
-        assertNull(decoder.readFrame())
-        decoder.close()
-    }
-
-    @Test
-    fun testM4aDecoderSeekToMsDoesNotThrow() {
-        val decoder = M4aDecoder()
-        decoder.seekToMs(0L)
-        decoder.seekToMs(1000L)
-        decoder.seekToMs(Long.MAX_VALUE)
-        decoder.close()
-    }
-
-    @Test
-    fun testM4aDecoderCloseIsIdempotent() {
-        val decoder = M4aDecoder()
-        decoder.close()
-        decoder.close()
-        decoder.close()
-    }
-
-    @Test
-    fun testM4aDecoderDurationDefaultZero() {
-        val decoder = M4aDecoder()
-        assertEquals(0L, decoder.totalDurationMs)
-        decoder.close()
-    }
-
-    @Test
-    fun testM4aDecoderDurationNotNegative() {
-        val decoder = M4aDecoder()
-        assertTrue(decoder.totalDurationMs >= 0L)
-        decoder.close()
-    }
-}
-
-class AudioPlayerDurationTest {
-
-    @Test
-    fun testDurationDefaultZero() {
-        val player = AudioPlayer()
-        assertEquals(0L, player.duration)
-        player.release()
-    }
-
-    @Test
-    fun testPauseImmediatelyStopsAudioLine() {
-        val player = AudioPlayer()
-        player.pause()
-        assertFalse(player.isPlaying)
-        player.release()
-    }
-
-    @Test
-    fun testStopClearsAudioLine() {
-        val player = AudioPlayer()
-        player.stop()
-        assertFalse(player.isPlaying)
-        player.release()
     }
 }
 

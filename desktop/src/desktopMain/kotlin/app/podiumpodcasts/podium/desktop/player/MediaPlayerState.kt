@@ -21,9 +21,9 @@ data class QueueItem(
     val isDownloaded: Boolean = false
 )
 
-class MediaPlayerState {
-
-    private val player = AudioPlayer()
+class MediaPlayerState(
+    private val player: AudioPlayerEngine = MpvAudioPlayerEngine()
+) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var sleepTimerJob: Job? = null
 
@@ -247,7 +247,7 @@ class MediaPlayerState {
 
     @Suppress("FunctionName")
     fun changePlaybackSpeed(speed: Float) {
-        player.setPlaybackSpeed(speed)
+        player.setSpeed(speed)
         playbackSpeed = speed
         Logger.d(TAG, "changePlaybackSpeed: speed=$speed")
     }
