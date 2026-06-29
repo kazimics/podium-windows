@@ -95,6 +95,9 @@ fun App() {
         DownloadManager(database, downloadsDir)
     }
     val playerState = remember { MediaPlayerState() }
+    DisposableEffect(Unit) {
+        onDispose { playerState.release() }
+    }
     val scope = rememberCoroutineScope()
 
     var podcasts by remember { mutableStateOf(emptyList<Podcast>()) }
