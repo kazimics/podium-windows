@@ -188,6 +188,7 @@ class AppGUITest {
                 )
             }
         }
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Play").assertIsDisplayed()
     }
 
@@ -204,6 +205,7 @@ class AppGUITest {
                 )
             }
         }
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Seek Back").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Seek Forward").assertIsDisplayed()
     }
@@ -237,6 +239,7 @@ class AppGUITest {
                 )
             }
         }
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Play").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Seek Back").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Seek Forward").assertIsDisplayed()

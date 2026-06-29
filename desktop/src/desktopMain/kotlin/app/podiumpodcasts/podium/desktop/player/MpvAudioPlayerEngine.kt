@@ -24,7 +24,10 @@ class MpvAudioPlayerEngine : AudioPlayerEngine {
     override var onError: ((String) -> Unit)? = null
 
     init {
-        MpvNativeLoader.load()
+        val loaded = MpvNativeLoader.load()
+        if (!loaded) {
+            throw IllegalStateException("mpv-1.dll not found. Place it in libs/ directory.")
+        }
         mpvHandle = MpvApi.INSTANCE.mpv_create()
 
         MpvApi.INSTANCE.mpv_set_option_string(mpvHandle, "terminal", "no")
