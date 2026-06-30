@@ -12,7 +12,6 @@ class PodcastManagerTest {
     private lateinit var database: AppDatabase
     private lateinit var manager: PodcastManager
     private lateinit var testDbFile: File
-    private val isCI = System.getenv("CI") == "true"
 
     @BeforeTest
     fun setup() {
@@ -30,7 +29,6 @@ class PodcastManagerTest {
 
     @Test
     fun testAddPodcastCreatesNewPodcast() = runBlocking {
-        if (isCI) { println("Skipping: network test in CI"); return@runBlocking }
         try {
             val result = manager.addPodcast(
                 origin = "https://feeds.simplecast.com/54nAGcIl",
@@ -48,7 +46,6 @@ class PodcastManagerTest {
 
     @Test
     fun testAddPodcastDuplicateReturnsDuplicate() = runBlocking {
-        if (isCI) { println("Skipping: network test in CI"); return@runBlocking }
         try {
             val origin = "https://feeds.simplecast.com/54nAGcIl"
 
@@ -64,7 +61,6 @@ class PodcastManagerTest {
 
     @Test
     fun testAddPodcastSavesToDatabase() = runBlocking {
-        if (isCI) { println("Skipping: network test in CI"); return@runBlocking }
         try {
             val origin = "https://feeds.simplecast.com/54nAGcIl"
             manager.addPodcast(origin, null)
@@ -79,7 +75,6 @@ class PodcastManagerTest {
 
     @Test
     fun testAddPodcastSavesEpisodes() = runBlocking {
-        if (isCI) { println("Skipping: network test in CI"); return@runBlocking }
         try {
             val origin = "https://feeds.simplecast.com/54nAGcIl"
             manager.addPodcast(origin, null)
@@ -93,7 +88,6 @@ class PodcastManagerTest {
 
     @Test
     fun testAddInvalidUrlThrowsException() = runBlocking {
-        if (isCI) { println("Skipping: network test in CI"); return@runBlocking }
         try {
             val result = manager.addPodcast(
                 origin = "https://invalid-url-that-does-not-exist.example.com/feed.xml",
