@@ -25,8 +25,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew || true
 
+      - name: Compile (shared + desktop)
+        shell: bash
+        run: |
+          START=$(date +%s)
+          ./gradlew :shared:compileKotlinDesktop :desktop:compileTestKotlinDesktop
+          END=$(date +%s)
+          echo "::notice::Compilation took $((END - START)) seconds"
+
       - name: Run unit tests
-        run: ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.VlcjMediaPlayerTest" --tests "app.podiumpodcasts.podium.desktop.ExportManagerTest" --tests "app.podiumpodcasts.podium.desktop.PodcastManagerTest" --tests "app.podiumpodcasts.podium.desktop.DownloadManagerTest" --tests "app.podiumpodcasts.podium.desktop.ImportManagerTest" --tests "app.podiumpodcasts.podium.desktop.MediaPlayerStateTest" --tests "app.podiumpodcasts.podium.desktop.HistoryDaoTest"
+        shell: bash
+        run: |
+          START=$(date +%s)
+          ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.VlcjMediaPlayerTest" --tests "app.podiumpodcasts.podium.desktop.ExportManagerTest" --tests "app.podiumpodcasts.podium.desktop.PodcastManagerTest" --tests "app.podiumpodcasts.podium.desktop.DownloadManagerTest" --tests "app.podiumpodcasts.podium.desktop.ImportManagerTest" --tests "app.podiumpodcasts.podium.desktop.MediaPlayerStateTest" --tests "app.podiumpodcasts.podium.desktop.HistoryDaoTest"
+          END=$(date +%s)
+          echo "::notice::Tests took $((END - START)) seconds"
 
       - name: Upload test results
         uses: actions/upload-artifact@v5
@@ -53,8 +66,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew || true
 
+      - name: Compile (shared + desktop + tests)
+        shell: bash
+        run: |
+          START=$(date +%s)
+          ./gradlew :shared:compileKotlinDesktop :desktop:compileTestKotlinDesktop
+          END=$(date +%s)
+          echo "::notice::Compilation took $((END - START)) seconds"
+
       - name: Run GUI tests
-        run: ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.AppGUITest" --tests "app.podiumpodcasts.podium.desktop.DiscoverScreenTest" --tests "app.podiumpodcasts.podium.desktop.HistoryScreenTest" --tests "app.podiumpodcasts.podium.desktop.SettingsScreenTest"
+        shell: bash
+        run: |
+          START=$(date +%s)
+          ./gradlew :desktop:desktopTest --tests "app.podiumpodcasts.podium.desktop.AppGUITest" --tests "app.podiumpodcasts.podium.desktop.DiscoverScreenTest" --tests "app.podiumpodcasts.podium.desktop.HistoryScreenTest" --tests "app.podiumpodcasts.podium.desktop.SettingsScreenTest"
+          END=$(date +%s)
+          echo "::notice::Tests took $((END - START)) seconds"
 
       - name: Upload test results
         uses: actions/upload-artifact@v5
