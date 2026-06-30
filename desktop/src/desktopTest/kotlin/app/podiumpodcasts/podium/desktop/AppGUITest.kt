@@ -2,10 +2,6 @@ package app.podiumpodcasts.podium.desktop
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.rememberWindowState
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.data.model.Podcast
 import app.podiumpodcasts.podium.data.model.PodcastEpisode
@@ -18,8 +14,6 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
 import org.junit.*
-import java.awt.Dimension
-import java.awt.Frame
 import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -31,14 +25,6 @@ class AppGUITest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
-
-    private fun createTestAwtWindow(): java.awt.Window {
-        val frame = Frame()
-        frame.isVisible = false
-        return object : java.awt.Window(frame) {
-            init { size = Dimension(1200, 800) }
-        }
-    }
 
     @Before
     fun setup() {
@@ -57,10 +43,8 @@ class AppGUITest {
 
     private fun setContentWithApp() {
         composeTestRule.setContent {
-            val windowState = rememberWindowState(size = DpSize(1200.dp, 800.dp))
-            val awtWindow = createTestAwtWindow()
-            Window(onCloseRequest = {}, state = windowState) {
-                PodiumTheme { App(windowState, awtWindow) }
+            PodiumTheme {
+                DiscoverScreen(database = database, onBack = {})
             }
         }
     }
