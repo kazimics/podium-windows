@@ -1,14 +1,39 @@
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-
 # CLAUDE.md
+
+这是 Kotlin Compose Desktop 项目。
+
+不要重写整个页面。
+
+优先：
+
+Modifier
+Padding
+Arrangement
+Shape
+Color
+Typography
+Surface
+Card
+LazyColumn
+LazyVerticalGrid
+
+尽可能复用已有 Composable。
+
+如果已有：
+
+PodcastItem()
+
+请修改样式。
+
+不要重新写一个 PodcastCard2()。
+
+所有状态(State)保持不变。
+
+所有事件(Event)保持不变。
+
+所有 callback 保持不变。
+
+只修改 UI Layer。
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 

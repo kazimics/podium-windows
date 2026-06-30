@@ -1,7 +1,6 @@
 package app.podiumpodcasts.podium.desktop
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -11,7 +10,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,9 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -37,24 +32,9 @@ import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.utils.Logger
 import app.podiumpodcasts.podium.utils.Strings
-import app.podiumpodcasts.podium.ui.theme.DesignTokens
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
-
-// ── Design Tokens: button.primary ──
-private val PrimaryButtonGradient = Brush.verticalGradient(
-    colors = listOf(
-        Color(0xFFC5976F),
-        Color(0xFFBF936C),
-        Color(0xFFB1845F)
-    ),
-    startY = 0f,
-    endY = 48f
-)
-private val PrimaryButtonBorder = Color(0x14FFFFFF)
-private val PrimaryButtonText = Color(0xFFFFF8F3)
-private val PrimaryButtonIcon = Color.White
 
 private const val TAG = "DiscoverScreen"
 
@@ -64,8 +44,6 @@ fun DiscoverScreen(
     onBack: () -> Unit
 ) {
     val colors = PodiumTheme.colors
-    val header = DesignTokens.PageHeader
-    val search = DesignTokens.SearchBar
     val scope = rememberCoroutineScope()
     val podcastManager = remember { PodcastManager(database) }
     val appleClient = remember { ApplePodcastClient() }
@@ -137,7 +115,7 @@ fun DiscoverScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = header.PaddingHorizontal, end = header.PaddingHorizontal, top = header.PaddingTop, bottom = DesignTokens.Spacing.sm),
+                .padding(start = 32.dp, end = 32.dp, top = 28.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ) {
@@ -145,40 +123,40 @@ fun DiscoverScreen(
                 Text(
                     text = "Discover",
                     color = colors.textPrimary,
-                    fontSize = header.TitleSize,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(header.Gap))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Curated podcasts, handpicked for you.",
                     color = colors.textMuted,
-                    fontSize = header.SubtitleSize
+                    fontSize = 14.sp
                 )
             }
 
             // Search bar
             Surface(
-                modifier = Modifier.width(search.Width).height(search.Height),
-                shape = RoundedCornerShape(search.Radius),
+                modifier = Modifier.width(320.dp).height(40.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = colors.surface
             ) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = search.PaddingHorizontal),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         Icons.Default.Search,
                         contentDescription = null,
                         tint = colors.textMuted,
-                        modifier = Modifier.size(search.IconSize)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(search.Gap))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Box(modifier = Modifier.weight(1f)) {
                         if (searchQuery.isEmpty()) {
                             Text(
                                 text = "Search podcasts, episodes, topics...",
                                 color = colors.textDisabled,
-                                fontSize = search.TextSize
+                                fontSize = 13.sp
                             )
                         }
                         BasicTextField(
@@ -187,7 +165,7 @@ fun DiscoverScreen(
                             modifier = Modifier.fillMaxWidth(),
                             textStyle = androidx.compose.ui.text.TextStyle(
                                 color = colors.textPrimary,
-                                fontSize = search.TextSize
+                                fontSize = 13.sp
                             ),
                             singleLine = true,
                             cursorBrush = SolidColor(colors.accent)
@@ -199,7 +177,7 @@ fun DiscoverScreen(
                             contentDescription = "Clear",
                             tint = colors.textMuted,
                             modifier = Modifier
-                                .size(search.ClearIconSize)
+                                .size(14.dp)
                                 .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                                 .clickable {
                                     searchQuery = ""
@@ -209,14 +187,14 @@ fun DiscoverScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     Surface(
-                        shape = RoundedCornerShape(search.ShortcutRadius),
+                        shape = RoundedCornerShape(5.dp),
                         color = colors.elevated
                     ) {
                         Text(
                             text = "\u2318K",
-                            modifier = Modifier.padding(horizontal = search.ShortcutPaddingH, vertical = search.ShortcutPaddingV),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             color = colors.textMuted,
-                            fontSize = search.ShortcutTextSize
+                            fontSize = 11.sp
                         )
                     }
                 }
@@ -291,9 +269,9 @@ fun DiscoverScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = DesignTokens.SectionHeader.PaddingHorizontal)
+                                        .padding(horizontal = 32.dp)
                                         .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(DesignTokens.PodcastCard.Gap)
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     podcasts.drop(1).take(10).forEach { podcast ->
                                         PodcastCard(
@@ -311,7 +289,7 @@ fun DiscoverScreen(
                             SectionHeader(
                                 title = if (searchQuery.isEmpty()) "New Episodes" else "Results"
                             )
-        Spacer(modifier = Modifier.height(DesignTokens.Spacing.sm))
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
 
                         val listItems = if (searchQuery.isEmpty()) podcasts.drop(1) else podcasts
@@ -341,34 +319,25 @@ private fun FeaturedCard(
     onNext: () -> Unit = {}
 ) {
     val colors = PodiumTheme.colors
-    val card = DesignTokens.FeaturedCard
-    val btn = DesignTokens.Button
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = DesignTokens.SectionHeader.PaddingHorizontal, vertical = 4.dp)
-            .height(card.Height),
-        shape = RoundedCornerShape(card.Radius),
-        color = Color.Transparent
+            .padding(horizontal = 32.dp, vertical = 4.dp)
+            .height(280.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = colors.elevated
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .shadow(8.dp, RoundedCornerShape(card.Radius), ambientColor = Color.Black.copy(alpha = 0.4f), spotColor = Color.Black.copy(alpha = 0.4f))
-                .clip(RoundedCornerShape(card.Radius))
-                .background(DesignTokens.Card.Gradient)
-        ) {
-            // Navigation arrows — top right, inside card
+        Box(modifier = Modifier.fillMaxSize().padding(0.dp)) {
+            // Navigation arrows — top right
             Row(
-                modifier = Modifier.align(Alignment.TopEnd).padding(card.NavPadding),
+                modifier = Modifier.align(Alignment.TopEnd),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(card.NavButtonSize)
+                        .size(30.dp)
                         .clip(CircleShape)
                         .background(colors.surface.copy(alpha = 0.6f))
-                        .border(1.dp, colors.border, CircleShape)
                         .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         .clickable { onPrevious() },
                     contentAlignment = Alignment.Center
@@ -382,10 +351,9 @@ private fun FeaturedCard(
                 }
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(30.dp)
                         .clip(CircleShape)
                         .background(colors.surface.copy(alpha = 0.6f))
-                        .border(1.dp, colors.border, CircleShape)
                         .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         .clickable { onNext() },
                     contentAlignment = Alignment.Center
@@ -401,21 +369,20 @@ private fun FeaturedCard(
 
             // Content: Cover + Text
             Row(
-                modifier = Modifier.fillMaxSize().padding(card.Padding),
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Cover
+                // Cover — square, rounded
                 AsyncImage(
                     model = podcast.imageUrl,
                     contentDescription = podcast.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(card.CoverRadius))
+                        .size(220.dp)
+                        .clip(RoundedCornerShape(14.dp))
                 )
 
-                Spacer(modifier = Modifier.width(card.ContentGap))
+                Spacer(modifier = Modifier.width(16.dp))
 
                 // Text content
                 Column(
@@ -429,7 +396,7 @@ private fun FeaturedCard(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 1.5.sp
                     )
-                    Spacer(modifier = Modifier.height(card.TextGap))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = podcast.title,
                         color = colors.textPrimary,
@@ -437,7 +404,7 @@ private fun FeaturedCard(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2
                     )
-                    Spacer(modifier = Modifier.height(card.TextGap))
+                    Spacer(modifier = Modifier.height(10.dp))
                     if (podcast.description.isNotEmpty()) {
                         Text(
                             text = podcast.description,
@@ -448,32 +415,33 @@ private fun FeaturedCard(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(card.ButtonGap))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Three action buttons
-                    Row(horizontalArrangement = Arrangement.spacedBy(card.ButtonGap)) {
-                        // Latest Episode — design token button
-                        Box(
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Latest Episode
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = colors.accent,
                             modifier = Modifier
-                                .height(btn.Height)
-                                .clip(RoundedCornerShape(btn.Radius))
-                                .shadow(btn.ShadowElevation, RoundedCornerShape(btn.Radius), ambientColor = btn.ShadowColor, spotColor = btn.ShadowColor)
-                                .border(DesignTokens.Border.Width, DesignTokens.Border.SecondaryColor, RoundedCornerShape(btn.Radius))
-                                .background(btn.Gradient)
-                                .clickable { onSubscribe() },
-                            contentAlignment = Alignment.Center
+                                .height(38.dp)
+                                .clickable { onSubscribe() }
                         ) {
-                            Box(modifier = Modifier.matchParentSize().background(btn.InnerHighlight))
                             Row(
-                                modifier = Modifier.padding(horizontal = btn.PaddingHorizontal),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.padding(horizontal = 18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = btn.IconColor, modifier = Modifier.size(btn.IconSize))
-                                Spacer(Modifier.width(DesignTokens.Spacing.sm))
+                                Icon(
+                                    Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = colors.background,
+                                    modifier = Modifier.size(16.dp)
+                                )
                                 Text(
                                     text = "Latest Episode",
-                                    color = btn.TextColor,
-                                    fontSize = btn.TextSize,
+                                    color = colors.background,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -482,27 +450,35 @@ private fun FeaturedCard(
                         // Add to playlist
                         Box(
                             modifier = Modifier
-                                .size(DesignTokens.IconButton.Size)
+                                .size(38.dp)
                                 .clip(CircleShape)
-                                .border(DesignTokens.Border.Width, DesignTokens.Border.SecondaryColor, CircleShape)
                                 .background(colors.surface)
                                 .clickable { onSubscribe() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = colors.textSecondary, modifier = Modifier.size(DesignTokens.IconButton.IconSize))
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = colors.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
 
                         // More / Detail
                         Box(
                             modifier = Modifier
-                                .size(DesignTokens.IconButton.Size)
+                                .size(38.dp)
                                 .clip(CircleShape)
-                                .border(DesignTokens.Border.Width, DesignTokens.Border.SecondaryColor, CircleShape)
                                 .background(colors.surface)
                                 .clickable { onShowDetail() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.MoreHoriz, contentDescription = "More", tint = colors.textSecondary, modifier = Modifier.size(DesignTokens.IconButton.IconSize))
+                            Icon(
+                                Icons.Default.MoreHoriz,
+                                contentDescription = "More",
+                                tint = colors.textSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
@@ -515,24 +491,23 @@ private fun FeaturedCard(
 @Composable
 private fun SectionHeader(title: String) {
     val colors = PodiumTheme.colors
-    val sh = DesignTokens.SectionHeader
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = sh.PaddingHorizontal),
+            .padding(horizontal = 32.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
             color = colors.textPrimary,
-            fontSize = sh.TitleSize,
+            fontSize = 20.sp,
             fontWeight = FontWeight.SemiBold
         )
         Text(
             text = "Show All",
             color = colors.accent,
-            fontSize = sh.LinkSize,
+            fontSize = 13.sp,
             modifier = Modifier.pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
         )
     }
@@ -545,10 +520,9 @@ private fun PodcastCard(
     onClick: () -> Unit
 ) {
     val colors = PodiumTheme.colors
-    val pc = DesignTokens.PodcastCard
     Column(
         modifier = Modifier
-            .width(pc.Width)
+            .width(150.dp)
             .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
             .clickable(onClick = onClick)
     ) {
@@ -557,21 +531,21 @@ private fun PodcastCard(
             contentDescription = podcast.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(pc.ImageSize)
-                .clip(RoundedCornerShape(pc.ImageRadius))
+                .size(150.dp)
+                .clip(RoundedCornerShape(14.dp))
         )
-        Spacer(modifier = Modifier.height(pc.Spacing))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = podcast.title,
             color = colors.textPrimary,
-            fontSize = pc.TitleSize,
+            fontSize = 13.sp,
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
         Text(
             text = podcast.author,
             color = colors.textMuted,
-            fontSize = pc.AuthorSize,
+            fontSize = 11.sp,
             maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
@@ -587,29 +561,30 @@ private fun EpisodeRow(
     onSubscribe: () -> Unit
 ) {
     val colors = PodiumTheme.colors
-    val er = DesignTokens.EpisodeRow
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(er.Height)
-            .padding(horizontal = er.PaddingHorizontal, vertical = er.PaddingVertical),
+            .height(88.dp)
+            .padding(horizontal = 32.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(er.Spacing)
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Cover
         AsyncImage(
             model = podcast.imageUrl,
             contentDescription = podcast.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(er.CoverSize)
-                .clip(RoundedCornerShape(er.CoverRadius))
+                .size(64.dp)
+                .clip(RoundedCornerShape(10.dp))
         )
 
+        // Title + Author + Description
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = podcast.title,
                 color = colors.textPrimary,
-                fontSize = er.TitleSize,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -618,7 +593,7 @@ private fun EpisodeRow(
             Text(
                 text = podcast.author,
                 color = colors.textSecondary,
-                fontSize = er.AuthorSize,
+                fontSize = 12.sp,
                 maxLines = 1
             )
             if (podcast.description.isNotEmpty()) {

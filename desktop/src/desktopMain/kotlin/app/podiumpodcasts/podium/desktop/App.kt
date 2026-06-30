@@ -1,6 +1,10 @@
 package app.podiumpodcasts.podium.desktop
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,8 +16,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowScope
+import java.awt.Cursor
 import coil3.compose.AsyncImage
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.data.model.Podcast
@@ -26,6 +40,7 @@ import app.podiumpodcasts.podium.manager.AddPodcastResult
 import app.podiumpodcasts.podium.manager.DownloadManager
 import app.podiumpodcasts.podium.manager.PodcastManager
 import app.podiumpodcasts.podium.manager.SubscriptionManager
+import app.podiumpodcasts.podium.ui.theme.DesignTokens
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import app.podiumpodcasts.podium.utils.Logger
 import app.podiumpodcasts.podium.utils.Settings
@@ -35,6 +50,136 @@ import java.io.File
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
 import java.util.*
+
+private val SidebarActiveBg = Color(0x14FFFFFF)
+
+@Composable
+private fun Sidebar(
+    currentScreen: String,
+    onDiscover: () -> Unit,
+    onShows: () -> Unit,
+    onHistory: () -> Unit,
+    onSettings: () -> Unit
+) {
+    data class NavItem(val icon: androidx.compose.ui.graphics.vector.ImageVector, val label: String, val screen: String)
+
+    val navItems = listOf(
+        NavItem(Icons.Default.Explore, "Discover", "discover"),
+        NavItem(Icons.Default.LibraryMusic, "Shows", "home"),
+        NavItem(Icons.Default.QueueMusic, "Episodes", "history"),
+        NavItem(Icons.Default.Folder, "Downloads", "home"),
+        NavItem(Icons.Default.Settings, "Settings", "settings")
+    )
+
+    val colors = PodiumTheme.colors
+    val sidebar = DesignTokens.Sidebar
+
+    Surface(
+        modifier = Modifier.width(sidebar.Width).fillMaxHeight(),
+        color = colors.surface
+    ) {
+        Column(
+            modifier = Modifier.fillMaxHeight().padding(vertical = sidebar.PaddingVertical)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = sidebar.PaddingHorizontal, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier.size(sidebar.LogoSize).background(colors.accent, RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.GraphicEq,
+                        contentDescription = null,
+                        tint = colors.surface,
+                        modifier = Modifier.size(sidebar.LogoIconSize)
+                    )
+                }
+                Text(
+                    text = "Podify",
+                    color = colors.textPrimary,
+                    fontSize = sidebar.LogoTextSize,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            navItems.forEach { item ->
+                val isActive = currentScreen == item.screen
+                val bgColor = when {
+                    isActive -> SidebarActiveBg
+                    else -> Color.Transparent
+                }
+                val iconTint = if (isActive) colors.accent else colors.textSecondary
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(sidebar.NavItemHeight)
+                        .padding(horizontal = sidebar.NavItemPadding)
+                        .background(bgColor, RoundedCornerShape(8.dp))
+                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+                        .clickable {
+                            when (item.screen) {
+                                "discover" -> onDiscover()
+                                "home" -> onShows()
+                                "history" -> onHistory()
+                                "settings" -> onSettings()
+                            }
+                        }
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(item.icon, contentDescription = item.label, tint = iconTint, modifier = Modifier.size(sidebar.NavIconSize))
+                        Text(
+                            text = item.label,
+                            color = if (isActive) colors.textPrimary else colors.textSecondary,
+                            fontSize = sidebar.NavTextSize
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            HorizontalDivider(color = colors.divider, modifier = Modifier.padding(horizontal = sidebar.DividerPadding))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val settingsActive = currentScreen == "settings"
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(sidebar.NavItemHeight)
+                    .padding(horizontal = sidebar.NavItemPadding)
+                    .background(if (settingsActive) SidebarActiveBg else Color.Transparent, RoundedCornerShape(8.dp))
+                    .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+                    .clickable { onSettings() }
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = if (settingsActive) colors.accent else colors.textSecondary, modifier = Modifier.size(sidebar.NavIconSize))
+                    Text(
+                        text = "Settings",
+                        color = if (settingsActive) colors.textPrimary else colors.textSecondary,
+                        fontSize = sidebar.NavTextSize
+                    )
+                }
+            }
+        }
+    }
+}
 
 private const val TAG = "App"
 
@@ -70,9 +215,39 @@ private suspend fun playAndRecordHistory(
     }
 }
 
+@Composable
+private fun WindowControlButton(
+    onClick: () -> Unit,
+    icon: @Composable (tint: Color) -> Unit,
+    isClose: Boolean = false
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val bgColor = when {
+        isClose && isHovered -> Color(0xFFE81123)
+        isHovered -> Color(0x18FFFFFF)
+        else -> Color.Transparent
+    }
+    val iconTint = when {
+        isClose && isHovered -> Color.White
+        isHovered -> Color.White
+        else -> Color(0xFF999999)
+    }
+
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .background(bgColor)
+            .clickable(interactionSource = interactionSource, indication = null) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        icon(iconTint)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App() {
+fun WindowScope.App(windowState: androidx.compose.ui.window.WindowState, awtWindow: java.awt.Window) {
     val database = remember {
         try {
             val userHome = System.getProperty("user.home")
@@ -101,7 +276,7 @@ fun App() {
     val scope = rememberCoroutineScope()
 
     var podcasts by remember { mutableStateOf(emptyList<Podcast>()) }
-    var currentScreen by remember { mutableStateOf("home") }
+    var currentScreen by remember { mutableStateOf("discover") }
     var selectedPodcast by remember { mutableStateOf<Podcast?>(null) }
     var showFullPlayer by remember { mutableStateOf(false) }
     var showQueueFromMini by remember { mutableStateOf(false) }
@@ -145,57 +320,120 @@ fun App() {
         Unit
     }
 
-    PodiumTheme {
+    PodiumTheme(darkTheme = true) {
+        val titleBarColors = PodiumTheme.colors
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.weight(1f)) {
-                when {
-                    showFullPlayer -> FullPlayer(
-                        state = playerState,
-                        onClose = { showFullPlayer = false }
+            // ── Custom Title Bar ──
+            WindowDraggableArea {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(36.dp)
+                        .background(titleBarColors.background),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        Icons.Default.GraphicEq,
+                        contentDescription = null,
+                        tint = titleBarColors.accent,
+                        modifier = Modifier.size(16.dp)
                     )
-                    selectedPodcast != null -> PodcastDetailScreen(
-                        podcast = selectedPodcast!!,
-                        database = database,
-                        subscriptionManager = subscriptionManager,
-                        playerState = playerState,
-                        downloadManager = downloadManager,
-                        downloadingEpisodes = downloadingEpisodes,
-                        downloadProgress = downloadProgress,
-                        downloadVersion = downloadVersion,
-                        completedDownloads = completedDownloads,
-                        onStartDownload = startDownload,
-                        onBack = { selectedPodcast = null }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Podium",
+                        color = titleBarColors.textMuted,
+                        fontSize = 12.sp
                     )
-                    currentScreen == "home" -> HomeScreen(
-                        podcasts = podcasts,
-                        database = database,
-                        subscriptionManager = subscriptionManager,
-                        scope = scope,
-                        onPodcastClick = { podcast -> selectedPodcast = podcast },
-                        onAddPodcast = { showAddDialog = true },
-                        onDiscover = { currentScreen = "discover" },
-                        onHistory = { currentScreen = "history" },
-                        onSettings = { currentScreen = "settings" },
-                        onPodcastsChanged = { newPodcasts -> podcasts = newPodcasts }
+                    Spacer(modifier = Modifier.weight(1f))
+                    // Minimize
+                    WindowControlButton(
+                        onClick = { windowState.isMinimized = true },
+                        icon = { tint -> Icon(Icons.Default.Remove, contentDescription = "Minimize", tint = tint, modifier = Modifier.size(14.dp)) }
                     )
-                    currentScreen == "discover" -> DiscoverScreen(
-                        database = database,
-                        onBack = {
-                            currentScreen = "home"
-                            scope.launch { podcasts = database.podcasts.getAllSync() }
+                    // Maximize
+                    WindowControlButton(
+                        onClick = {
+                            windowState.placement = if (windowState.placement == WindowPlacement.Maximized)
+                                WindowPlacement.Floating else WindowPlacement.Maximized
+                        },
+                        icon = { tint ->
+                            Icon(
+                                if (windowState.placement == WindowPlacement.Maximized) Icons.Default.FilterNone else Icons.Default.CropSquare,
+                                contentDescription = "Maximize",
+                                tint = tint,
+                                modifier = Modifier.size(14.dp)
+                            )
                         }
                     )
-                    currentScreen == "settings" -> SettingsScreen(
-                        database = database,
-                        onBack = { currentScreen = "home" },
-                        onDownloadPathChanged = { newPath -> downloadPath = newPath },
-                        onLanguageChanged = { /* Language change is handled by Settings */ }
+                    // Close
+                    WindowControlButton(
+                        onClick = { awtWindow.dispose(); System.exit(0) },
+                        icon = { tint -> Icon(Icons.Default.Close, contentDescription = "Close", tint = tint, modifier = Modifier.size(14.dp)) },
+                        isClose = true
                     )
-                    currentScreen == "history" -> HistoryScreen(
-                        database = database,
-                        playerState = playerState,
-                        onBack = { currentScreen = "home" }
-                    )
+                }
+            }
+
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Sidebar(
+                    currentScreen = currentScreen,
+                    onDiscover = { currentScreen = "discover" },
+                    onShows = { currentScreen = "home" },
+                    onHistory = { currentScreen = "history" },
+                    onSettings = { currentScreen = "settings" }
+                )
+
+                Box(modifier = Modifier.weight(1f)) {
+                    when {
+                        showFullPlayer -> FullPlayer(
+                            state = playerState,
+                            onClose = { showFullPlayer = false }
+                        )
+                        selectedPodcast != null -> PodcastDetailScreen(
+                            podcast = selectedPodcast!!,
+                            database = database,
+                            subscriptionManager = subscriptionManager,
+                            playerState = playerState,
+                            downloadManager = downloadManager,
+                            downloadingEpisodes = downloadingEpisodes,
+                            downloadProgress = downloadProgress,
+                            downloadVersion = downloadVersion,
+                            completedDownloads = completedDownloads,
+                            onStartDownload = startDownload,
+                            onBack = { selectedPodcast = null }
+                        )
+                        currentScreen == "home" -> HomeScreen(
+                            podcasts = podcasts,
+                            database = database,
+                            subscriptionManager = subscriptionManager,
+                            scope = scope,
+                            onPodcastClick = { podcast -> selectedPodcast = podcast },
+                            onAddPodcast = { showAddDialog = true },
+                            onDiscover = { currentScreen = "discover" },
+                            onHistory = { currentScreen = "history" },
+                            onSettings = { currentScreen = "settings" },
+                            onPodcastsChanged = { newPodcasts -> podcasts = newPodcasts }
+                        )
+                        currentScreen == "discover" -> DiscoverScreen(
+                            database = database,
+                            onBack = {
+                                currentScreen = "home"
+                                scope.launch { podcasts = database.podcasts.getAllSync() }
+                            }
+                        )
+                        currentScreen == "settings" -> SettingsScreen(
+                            database = database,
+                            onBack = { currentScreen = "home" },
+                            onDownloadPathChanged = { newPath -> downloadPath = newPath },
+                            onLanguageChanged = { /* Language change is handled by Settings */ }
+                        )
+                        currentScreen == "history" -> HistoryScreen(
+                            database = database,
+                            playerState = playerState,
+                            onBack = { currentScreen = "home" }
+                        )
+                    }
                 }
             }
 

@@ -24,9 +24,11 @@ fun main() {
             Window(
                 onCloseRequest = ::exitApplication,
                 state = windowState,
-                title = "Podium"
+                title = "Podium",
+                undecorated = true,
+                transparent = false
             ) {
-                App()
+                App(windowState, window)
             }
         }
     } catch (e: Exception) {

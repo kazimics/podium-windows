@@ -20,14 +20,16 @@ This project is a Windows desktop port of [aimok04/podium](https://github.com/ai
 
 ## Notable Features
 
+- **Custom UI** — Immersive window with custom title bar, sidebar navigation, and premium gold gradient buttons.
 - **Download** your favorite episodes for offline listening.
-- **Discover** new podcasts on the *Discover* tab *(powered by Apple Podcasts)* with subscribe loading feedback.
-- **Playback controls** - play/pause, seek, playback speed adjustment.
+- **Discover** new podcasts on the *Discover* tab *(powered by Apple Podcasts)* with featured cards and trending sections.
+- **Playback controls** - play/pause, seek, playback speed adjustment, 15s/30s skip.
 - **Sleep timer** - automatically pause after a set duration.
-- **Queue management** - build and manage your playback queue.
+- **Queue management** - build and manage your playback queue with cover art.
 - **OPML import/export** - transfer your subscriptions between apps.
 - **History** - track your listening history.
 - **Subscription management** - unsubscribe from podcasts individually or in batch.
+- **Design system** — centralized design tokens for consistent spacing, colors, and typography.
 
 ## Installation
 
@@ -80,6 +82,10 @@ gradlew.bat :desktop:desktopTest
 ```
 podium-windows/
 ├── shared/                    # Shared business logic (KMP)
+│   └── ui/theme/
+│       ├── Color.kt           # Color definitions
+│       ├── Theme.kt           # PodiumTheme + PodiumColors
+│       └── DesignTokens.kt    # Design system tokens
 ├── desktop/                   # Windows desktop entry point
 ├── feature-home/              # Home feature module
 ├── feature-discover/          # Discover feature module

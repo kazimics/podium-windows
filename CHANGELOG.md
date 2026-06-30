@@ -4,6 +4,33 @@ All notable changes to podium-windows will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.0] - 2026-06-30
+
+### Added
+- Design system (`DesignTokens.kt`) — centralized design tokens for spacing, colors, typography, and component dimensions
+- Custom immersive title bar with undecorated window (minimize, maximize, close buttons with hover effects)
+- Window dragging via `WindowDraggableArea`
+- Premium gradient button system (`Button.Gradient`, `Button.InnerHighlight`)
+- Card background gradient (`Card.Gradient` — #1C1C1E → #15171B)
+- Sidebar navigation component with accent highlighting and hover cursor
+- Featured card on Discover page with cover art, description, and action buttons
+- Podcast card horizontal scroll section ("Trending This Week")
+- Episode row component for podcast lists
+- Queue panel as fixed right-side drawer with cover art per item
+- MiniPlayer redesign: cover art, speed selector, 15s/30s skip, volume slider, progress slider
+
+### Changed
+- Theme system upgraded: custom `PodiumColors` data class with `LocalPodiumColors` CompositionLocal
+- Default screen changed from Home to Discover
+- Color palette updated to match design system (warm gold accent, dark surface tones)
+- All hardcoded dp/sp values in Sidebar, DiscoverScreen, PlayerUI replaced with `DesignTokens` references
+- MiniPlayer layout: single Row with three-section layout (left: cover+title, center: controls, right: time+slider+volume)
+- QueueDrawer redesigned with 320px fixed panel, 80px row height, cover thumbnails
+
+### Removed
+- TopAppBar navigation from Discover screen (replaced by Sidebar)
+- Material3 default color scheme overrides (replaced by design system tokens)
+
 ## [0.1.0] - 2026-06-29
 
 ### Added
