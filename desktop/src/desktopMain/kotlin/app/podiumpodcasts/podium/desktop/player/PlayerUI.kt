@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.sp
+import app.podiumpodcasts.podium.ui.theme.DesignTokens
+import app.podiumpodcasts.podium.ui.theme.PodiumBackground
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
 import app.podiumpodcasts.podium.utils.Strings
 import coil3.compose.AsyncImage
@@ -74,209 +76,233 @@ fun MiniPlayer(
     }
 
     Surface(
-        modifier = modifier.fillMaxWidth().height(88.dp),
-        color = colors.surface
+        modifier = modifier.fillMaxWidth(),
+        color = PodiumBackground
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
         ) {
-            // ── Left: Cover + Title + Podcast ──
-            Row(
-                modifier = Modifier.weight(2.5f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AsyncImage(
-                    model = state.currentArtworkUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                )
-                Column {
-                    Text(
-                        text = state.currentTitle ?: Strings["player_no_playback"],
-                        color = colors.textPrimary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(88.dp)
+                    .shadow(
+                        8.dp,
+                        RoundedCornerShape(18.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.4f),
+                        spotColor = Color.Black.copy(alpha = 0.4f)
                     )
-                    if (state.currentUrl != null) {
-                        Text(
-                            text = "",
-                            color = colors.textMuted,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-
-            // ── Center: Speed + Rewind + Play + Forward ──
-            Row(
-                modifier = Modifier.weight(3f),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                    .border(DesignTokens.Border.Width, colors.border, RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(DesignTokens.Card.Gradient)
             ) {
-                Box {
-                    TextButton(
-                        onClick = { showSpeedMenu = true },
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.size(36.dp)
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // ── Left: Cover + Title + Podcast ──
+                    Row(
+                        modifier = Modifier.weight(0.9f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = "${state.playbackSpeed}x",
-                            color = colors.textMuted,
-                            fontSize = 14.sp
+                        AsyncImage(
+                            model = state.currentArtworkUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(6.dp))
                         )
+                        Column {
+                            Text(
+                                text = state.currentTitle ?: Strings["player_no_playback"],
+                                color = colors.textPrimary,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (state.currentUrl != null) {
+                                Text(
+                                    text = "",
+                                    color = colors.textMuted,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
                     }
-                    DropdownMenu(
-                        expanded = showSpeedMenu,
-                        onDismissRequest = { showSpeedMenu = false }
+
+                    // ── Center: Speed + Rewind + Play + Forward ──
+                    Row(
+                        modifier = Modifier.width(260.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f).forEach { speed ->
-                            DropdownMenuItem(
-                                text = { Text("${speed}x") },
-                                onClick = {
-                                    state.changePlaybackSpeed(speed)
-                                    showSpeedMenu = false
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .height(30.dp)
+                                    .width(40.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showSpeedMenu = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "${state.playbackSpeed}x",
+                                    color = colors.textMuted,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showSpeedMenu,
+                                onDismissRequest = { showSpeedMenu = false }
+                            ) {
+                                listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f).forEach { speed ->
+                                    DropdownMenuItem(
+                                        text = { Text("${speed}x") },
+                                        onClick = {
+                                            state.changePlaybackSpeed(speed)
+                                            showSpeedMenu = false
+                                        }
+                                    )
                                 }
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { state.seekBack(15000L) },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Replay10,
+                                contentDescription = Strings["player_seek_back"],
+                                tint = colors.textMuted,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .shadow(10.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
+                                .border(1.dp, PrimaryButtonBorder, CircleShape)
+                                .background(PrimaryButtonGradient)
+                                .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+                                .clickable { state.togglePlayPause() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(modifier = Modifier.matchParentSize().background(PrimaryButtonInnerHighlight))
+                            Icon(
+                                if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (state.isPlaying) Strings["player_pause"] else Strings["player_play"],
+                                tint = PrimaryButtonIcon,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { state.seekForward(30000L) },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Forward10,
+                                contentDescription = Strings["player_seek_forward"],
+                                tint = colors.textMuted,
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                     }
-                }
 
-                IconButton(
-                    onClick = { state.seekBack(15000L) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Replay10,
-                        contentDescription = Strings["player_seek_back"],
-                        tint = colors.textMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .shadow(10.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
-                        .border(1.dp, PrimaryButtonBorder, CircleShape)
-                        .background(PrimaryButtonGradient)
-                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
-                        .clickable { state.togglePlayPause() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(modifier = Modifier.matchParentSize().background(PrimaryButtonInnerHighlight))
-                    Icon(
-                        if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (state.isPlaying) Strings["player_pause"] else Strings["player_play"],
-                        tint = PrimaryButtonIcon,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = { state.seekForward(30000L) },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Forward10,
-                        contentDescription = Strings["player_seek_forward"],
-                        tint = colors.textMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-
-            // ── Right: Time + Slider + Volume + Queue + Fullscreen ──
-            Row(
-                modifier = Modifier.weight(4f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = formatTime(state.currentPosition),
-                    color = colors.textMuted,
-                    fontSize = 12.sp
-                )
-
-                Slider(
-                    value = sliderPosition,
-                    onValueChange = { sliderPosition = it },
-                    onValueChangeFinished = {
-                        val pos = (sliderPosition * state.duration).toLong()
-                        state.seek(pos)
-                    },
-                    modifier = Modifier.weight(1f).height(20.dp),
-                    thumb = {
-                        SliderDefaults.Thumb(
-                            interactionSource = interactionSource,
-                            colors = SliderDefaults.colors(thumbColor = Color.White),
-                            thumbSize = DpSize(12.dp, 12.dp),
-                            modifier = Modifier.offset(y = 2.dp)
+                    // ── Right: Time + Slider + Volume + Queue + Fullscreen ──
+                    Row(
+                        modifier = Modifier.weight(1f).padding(start = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = formatTime(state.currentPosition),
+                            color = colors.textMuted,
+                            fontSize = 12.sp
                         )
-                    },
-                    track = { sliderState ->
-                        SliderDefaults.Track(
-                            sliderState = sliderState,
-                            modifier = Modifier.height(6.dp),
-                            thumbTrackGapSize = 0.dp,
+
+                        Slider(
+                            value = sliderPosition,
+                            onValueChange = { sliderPosition = it },
+                            onValueChangeFinished = {
+                                val pos = (sliderPosition * state.duration).toLong()
+                                state.seek(pos)
+                            },
+                            modifier = Modifier.weight(1f).height(20.dp),
+                            thumb = {
+                                SliderDefaults.Thumb(
+                                    interactionSource = interactionSource,
+                                    colors = SliderDefaults.colors(thumbColor = Color.White),
+                                    thumbSize = DpSize(12.dp, 12.dp),
+                                    modifier = Modifier.offset(y = 2.dp)
+                                )
+                            },
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    modifier = Modifier.height(6.dp),
+                                    thumbTrackGapSize = 0.dp,
+                                    colors = SliderDefaults.colors(
+                                        activeTrackColor = colors.accent,
+                                        inactiveTrackColor = colors.elevated
+                                    )
+                                )
+                            },
                             colors = SliderDefaults.colors(
+                                thumbColor = Color.White,
                                 activeTrackColor = colors.accent,
                                 inactiveTrackColor = colors.elevated
-                            )
+                            ),
+                            interactionSource = interactionSource
                         )
-                    },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = colors.accent,
-                        inactiveTrackColor = colors.elevated
-                    ),
-                    interactionSource = interactionSource
-                )
 
-                Text(
-                    text = formatTime(state.duration),
-                    color = colors.textMuted,
-                    fontSize = 12.sp
-                )
+                        Text(
+                            text = formatTime(state.duration),
+                            color = colors.textMuted,
+                            fontSize = 12.sp
+                        )
 
-                Icon(
-                    if (state.volume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                    contentDescription = if (state.volume > 0) Strings["player_mute"] else Strings["player_unmute"],
-                    tint = colors.textMuted,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
-                        .clickable { state.toggleMute() }
-                )
+                        Icon(
+                            if (state.volume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = if (state.volume > 0) Strings["player_mute"] else Strings["player_unmute"],
+                            tint = colors.textMuted,
+                            modifier = Modifier
+                                .size(22.dp)
+                                .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+                                .clickable { state.toggleMute() }
+                        )
 
-                IconButton(
-                    onClick = onShowQueue,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.QueueMusic,
-                        contentDescription = Strings["player_queue"],
-                        tint = colors.textMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                        IconButton(
+                            onClick = onShowQueue,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.QueueMusic,
+                                contentDescription = Strings["player_queue"],
+                                tint = colors.textMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
 
-                IconButton(
-                    onClick = onExpand,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Fullscreen,
-                        contentDescription = "Expand",
-                        tint = colors.textMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
+                        IconButton(
+                            onClick = onExpand,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Fullscreen,
+                                contentDescription = "Expand",
+                                tint = colors.textMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
