@@ -2,6 +2,10 @@ package app.podiumpodcasts.podium.desktop
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.rememberWindowState
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.data.model.Podcast
 import app.podiumpodcasts.podium.data.model.PodcastEpisode
@@ -14,6 +18,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
 import org.junit.*
+import java.awt.Dimension
+import java.awt.Frame
 import java.io.File
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -25,6 +31,14 @@ class AppGUITest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    private fun createTestAwtWindow(): java.awt.Window {
+        val frame = Frame()
+        frame.isVisible = false
+        return object : java.awt.Window(frame) {
+            init { size = Dimension(1200, 800) }
+        }
+    }
 
     @Before
     fun setup() {
@@ -41,45 +55,45 @@ class AppGUITest {
         Dispatchers.resetMain()
     }
 
+    private fun setContentWithApp() {
+        composeTestRule.setContent {
+            val windowState = rememberWindowState(size = DpSize(1200.dp, 800.dp))
+            val awtWindow = createTestAwtWindow()
+            Window(onCloseRequest = {}, state = windowState) {
+                PodiumTheme { App(windowState, awtWindow) }
+            }
+        }
+    }
+
     // === Home Screen Tests ===
 
     @Test
     fun testHomeScreenHasTopBar() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithText(Strings["home_title"]).assertIsDisplayed()
     }
 
     @Test
     fun testHomeScreenShowsAddButton() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["home_add_podcast"]).assertIsDisplayed()
     }
 
     @Test
     fun testHomeScreenShowsDiscoverButton() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_discover"]).assertIsDisplayed()
     }
 
     @Test
     fun testHomeScreenShowsHistoryButton() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_history"]).assertIsDisplayed()
     }
 
     @Test
     fun testHomeScreenShowsSettingsButton() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_settings"]).assertIsDisplayed()
     }
 
@@ -101,9 +115,7 @@ class AppGUITest {
             skipBeginning = 0,
             skipEnding = 0
         )
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         // Note: This tests the initial state before data loads
         composeTestRule.onNodeWithText(Strings["home_title"]).assertIsDisplayed()
     }
@@ -343,9 +355,7 @@ class AppGUITest {
 
     @Test
     fun testNavigateToDiscover() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_discover"]).performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(Strings["discover_title"]).assertIsDisplayed()
@@ -353,9 +363,7 @@ class AppGUITest {
 
     @Test
     fun testNavigateToHistory() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_history"]).performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(Strings["history_title"]).assertIsDisplayed()
@@ -363,9 +371,7 @@ class AppGUITest {
 
     @Test
     fun testNavigateToSettings() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["nav_settings"]).performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(Strings["settings_title"]).assertIsDisplayed()
@@ -375,9 +381,7 @@ class AppGUITest {
 
     @Test
     fun testAddPodcastDialogOpens() {
-        composeTestRule.setContent {
-            PodiumTheme { App() }
-        }
+        setContentWithApp()
         composeTestRule.onNodeWithContentDescription(Strings["home_add_podcast"]).performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(Strings["add_podcast_hint"]).assertIsDisplayed()
