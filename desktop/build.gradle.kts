@@ -46,6 +46,10 @@ kotlin {
     }
 }
 
+tasks.withType<AbstractTestTask>().configureEach {
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+}
+
 compose.desktop {
     application {
         mainClass = "app.podiumpodcasts.podium.desktop.MainKt"
