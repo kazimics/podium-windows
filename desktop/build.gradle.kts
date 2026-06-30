@@ -42,6 +42,7 @@ kotlin {
                 implementation(compose.desktop.currentOs)
                 implementation("org.jetbrains.compose.ui:ui-test:1.9.0")
                 implementation("org.jetbrains.compose.ui:ui-test-junit4:1.9.0")
+                implementation(libs.rssparser)
             }
         }
     }

@@ -12,13 +12,14 @@ class PodcastManagerTest {
     private lateinit var database: AppDatabase
     private lateinit var manager: PodcastManager
     private lateinit var testDbFile: File
+    private val fakeOrigin = "https://fake-podcast.example.com/feed.xml"
 
     @BeforeTest
     fun setup() {
         testDbFile = File(System.getProperty("java.io.tmpdir"), "podium_test_${System.currentTimeMillis()}.db")
         testDbFile.deleteOnExit()
         database = AppDatabase.build(testDbFile)
-        manager = PodcastManager(database)
+        manager = PodcastManager(database, fetchPodcastClient = FakeFetchPodcastClient())
     }
 
     @AfterTest
@@ -29,75 +30,45 @@ class PodcastManagerTest {
 
     @Test
     fun testAddPodcastCreatesNewPodcast() = runBlocking {
-        try {
-            val result = manager.addPodcast(
-                origin = "https://feeds.simplecast.com/54nAGcIl",
-                seedColor = null
-            )
+        val result = manager.addPodcast(fakeOrigin, null)
 
-            assertTrue(result is AddPodcastResult.Created)
-            val podcast = (result as AddPodcastResult.Created).podcast
-            assertNotNull(podcast.title)
-            assertTrue(podcast.title.isNotEmpty())
-        } catch (e: Exception) {
-            println("Skipping test: Network not available: ${e.message}")
-        }
+        assertTrue(result is AddPodcastResult.Created)
+        val podcast = (result as AddPodcastResult.Created).podcast
+        assertNotNull(podcast.title)
+        assertTrue(podcast.title.isNotEmpty())
     }
 
     @Test
     fun testAddPodcastDuplicateReturnsDuplicate() = runBlocking {
-        try {
-            val origin = "https://feeds.simplecast.com/54nAGcIl"
+        val firstResult = manager.addPodcast(fakeOrigin, null)
+        assertTrue(firstResult is AddPodcastResult.Created)
 
-            val firstResult = manager.addPodcast(origin, null)
-            assertTrue(firstResult is AddPodcastResult.Created)
-
-            val secondResult = manager.addPodcast(origin, null)
-            assertTrue(secondResult is AddPodcastResult.Duplicate)
-        } catch (e: Exception) {
-            println("Skipping test: Network not available: ${e.message}")
-        }
+        val secondResult = manager.addPodcast(fakeOrigin, null)
+        assertTrue(secondResult is AddPodcastResult.Duplicate)
     }
 
     @Test
     fun testAddPodcastSavesToDatabase() = runBlocking {
-        try {
-            val origin = "https://feeds.simplecast.com/54nAGcIl"
-            manager.addPodcast(origin, null)
+        manager.addPodcast(fakeOrigin, null)
 
-            val podcasts = database.podcasts.getAllSync()
-            assertEquals(1, podcasts.size)
-            assertEquals(origin, podcasts[0].origin)
-        } catch (e: Exception) {
-            println("Skipping test: Network not available: ${e.message}")
-        }
+        val podcasts = database.podcasts.getAllSync()
+        assertEquals(1, podcasts.size)
+        assertEquals(fakeOrigin, podcasts[0].origin)
     }
 
     @Test
     fun testAddPodcastSavesEpisodes() = runBlocking {
-        try {
-            val origin = "https://feeds.simplecast.com/54nAGcIl"
-            manager.addPodcast(origin, null)
+        manager.addPodcast(fakeOrigin, null)
 
-            val episodes = database.episodes.getAllByOrigin(origin)
-            assertTrue(episodes.isNotEmpty(), "Should have saved episodes")
-        } catch (e: Exception) {
-            println("Skipping test: Network not available: ${e.message}")
-        }
+        val episodes = database.episodes.getAllByOrigin(fakeOrigin)
+        assertEquals(2, episodes.size)
+        val titles = episodes.map { it.title }.toSet()
+        assertTrue(titles.containsAll(setOf("Episode 1", "Episode 2")))
     }
 
     @Test
-    fun testAddInvalidUrlThrowsException() = runBlocking {
-        try {
-            val result = manager.addPodcast(
-                origin = "https://invalid-url-that-does-not-exist.example.com/feed.xml",
-                seedColor = null
-            )
-            // If no exception, the result should be valid
-            assertTrue(result is AddPodcastResult.Created || result is AddPodcastResult.Duplicate)
-        } catch (e: Exception) {
-            // Expected: invalid URL should throw an exception
-            assertTrue(e.message != null)
-        }
+    fun testAddInvalidUrlStillWorks() = runBlocking {
+        val result = manager.addPodcast("https://invalid-url.example.com/feed.xml", null)
+        assertTrue(result is AddPodcastResult.Created)
     }
 }

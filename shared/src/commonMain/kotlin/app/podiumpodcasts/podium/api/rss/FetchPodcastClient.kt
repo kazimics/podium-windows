@@ -25,7 +25,7 @@ sealed interface FetchPodcastClientResult {
     data class Failure(val e: Exception) : FetchPodcastClientResult
 }
 
-class FetchPodcastClient(
+open class FetchPodcastClient(
     val client: HttpClient = HttpClient { }
 ) {
     private val rssParser = RssParser()
@@ -102,7 +102,7 @@ class FetchPodcastClient(
         throw Exception("UNHANDLED STATUS CODE ${response.status}")
     }
 
-    suspend fun fetchNoCache(
+    open suspend fun fetchNoCache(
         origin: String
     ): FetchPodcastClientResult {
         return get(
