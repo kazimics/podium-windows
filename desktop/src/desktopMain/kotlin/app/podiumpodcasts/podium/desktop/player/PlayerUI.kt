@@ -159,6 +159,7 @@ fun MiniPlayer(
                                     .height(30.dp)
                                     .width(40.dp)
                                     .clip(RoundedCornerShape(8.dp))
+                                    .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                                     .clickable { showSpeedMenu = true },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -186,7 +187,7 @@ fun MiniPlayer(
 
                         IconButton(
                             onClick = { state.seekBack() },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(48.dp).pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         ) {
                             Icon(
                                 Icons.Default.Replay10,
@@ -203,7 +204,7 @@ fun MiniPlayer(
                                 .shadow(10.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
                                 .border(1.dp, PrimaryButtonBorder, CircleShape)
                                 .background(PrimaryButtonGradient)
-                                .pointerHoverIcon(if (state.currentUrl != null) PointerIcon(Cursor(Cursor.HAND_CURSOR)) else PointerIcon.Default)
+                                .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                                 .clickable(enabled = state.currentUrl != null) { state.togglePlayPause() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -218,7 +219,7 @@ fun MiniPlayer(
 
                         IconButton(
                             onClick = { state.seekForward() },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(40.dp).pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         ) {
                             Icon(
                                 Icons.Default.Forward10,
@@ -284,7 +285,7 @@ fun MiniPlayer(
 
                         IconButton(
                             onClick = { state.toggleMute() },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp).pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         ) {
                             Icon(
                                 if (state.volume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
@@ -296,7 +297,7 @@ fun MiniPlayer(
 
                         IconButton(
                             onClick = onShowQueue,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp).pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         ) {
                             Icon(
                                 Icons.Default.QueueMusic,
@@ -308,7 +309,7 @@ fun MiniPlayer(
 
                         IconButton(
                             onClick = onExpand,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp).pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
                         ) {
                             Icon(
                                 Icons.Default.Fullscreen,
