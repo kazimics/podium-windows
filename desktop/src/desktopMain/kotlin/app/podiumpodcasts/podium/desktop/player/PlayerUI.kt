@@ -82,11 +82,22 @@ fun MiniPlayer(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .height(IntrinsicSize.Max)
         ) {
             Box(
                 modifier = Modifier
+                    .width(DesignTokens.Sidebar.Width)
+                    .fillMaxHeight()
+                    .background(colors.surface)
+            )
+            Box(
+                modifier = Modifier
                     .fillMaxWidth()
+                    .padding(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
                     .height(88.dp)
                     .shadow(
                         8.dp,
@@ -305,6 +316,7 @@ fun MiniPlayer(
                     }
                 }
             }
+        }
         }
     }
 }

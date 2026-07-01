@@ -67,8 +67,7 @@ private fun Sidebar(
         NavItem(Icons.Default.Explore, "Discover", "discover"),
         NavItem(Icons.Default.LibraryMusic, "Shows", "home"),
         NavItem(Icons.Default.QueueMusic, "Episodes", "history"),
-        NavItem(Icons.Default.Folder, "Downloads", "home"),
-        NavItem(Icons.Default.Settings, "Settings", "settings")
+        NavItem(Icons.Default.Folder, "Downloads", "home")
     )
 
     val colors = PodiumTheme.colors
@@ -79,7 +78,7 @@ private fun Sidebar(
         color = colors.surface
     ) {
         Column(
-            modifier = Modifier.fillMaxHeight().padding(vertical = sidebar.PaddingVertical)
+            modifier = Modifier.fillMaxHeight().padding(top = sidebar.PaddingVertical, bottom = 0.dp)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = sidebar.PaddingHorizontal, vertical = 8.dp),
@@ -109,40 +108,46 @@ private fun Sidebar(
 
             navItems.forEach { item ->
                 val isActive = currentScreen == item.screen
-                val bgColor = when {
-                    isActive -> SidebarActiveBg
-                    else -> Color.Transparent
-                }
+                val interactionSource = remember(item.screen) { MutableInteractionSource() }
+                val isHovered by interactionSource.collectIsHoveredAsState()
+                val showBg = isActive || isHovered
+                val bgColor = if (showBg) SidebarActiveBg else Color.Transparent
                 val iconTint = if (isActive) colors.accent else colors.textSecondary
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(sidebar.NavItemHeight)
-                        .padding(horizontal = sidebar.NavItemPadding)
-                        .background(bgColor, RoundedCornerShape(8.dp))
-                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
-                        .clickable {
-                            when (item.screen) {
-                                "discover" -> onDiscover()
-                                "home" -> onShows()
-                                "history" -> onHistory()
-                                "settings" -> onSettings()
-                            }
-                        }
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.CenterStart
+                        .padding(vertical = 4.dp)
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(sidebar.NavItemHeight)
+                            .padding(horizontal = sidebar.NavItemPadding)
+                            .background(bgColor, RoundedCornerShape(8.dp))
+                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+                            .clickable(interactionSource = interactionSource, indication = null) {
+                                when (item.screen) {
+                                    "discover" -> onDiscover()
+                                    "home" -> onShows()
+                                    "history" -> onHistory()
+                                    "settings" -> onSettings()
+                                }
+                            }
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        Icon(item.icon, contentDescription = item.label, tint = iconTint, modifier = Modifier.size(sidebar.NavIconSize))
-                        Text(
-                            text = item.label,
-                            color = if (isActive) colors.textPrimary else colors.textSecondary,
-                            fontSize = sidebar.NavTextSize
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(item.icon, contentDescription = item.label, tint = iconTint, modifier = Modifier.size(sidebar.NavIconSize))
+                            Text(
+                                text = item.label,
+                                color = if (isActive) colors.textPrimary else colors.textSecondary,
+                                fontSize = sidebar.NavTextSize
+                            )
+                        }
                     }
                 }
             }
@@ -154,14 +159,17 @@ private fun Sidebar(
             Spacer(modifier = Modifier.height(8.dp))
 
             val settingsActive = currentScreen == "settings"
+            val settingsInteractionSource = remember { MutableInteractionSource() }
+            val settingsIsHovered by settingsInteractionSource.collectIsHoveredAsState()
+            val settingsShowBg = settingsActive || settingsIsHovered
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(sidebar.NavItemHeight)
                     .padding(horizontal = sidebar.NavItemPadding)
-                    .background(if (settingsActive) SidebarActiveBg else Color.Transparent, RoundedCornerShape(8.dp))
+                    .background(if (settingsShowBg) SidebarActiveBg else Color.Transparent, RoundedCornerShape(8.dp))
                     .pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
-                    .clickable { onSettings() }
+                    .clickable(interactionSource = settingsInteractionSource, indication = null) { onSettings() }
                     .padding(horizontal = 8.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
