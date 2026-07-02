@@ -26,8 +26,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Entire FeaturedCard cover + text area clickable → navigates to episode list
 - Subscription state feedback on FeaturedCard: spinner during subscribing, check icon when subscribed
 - In-memory + persistent cache for `itunes-lookup:xxx` subscription status check across sessions
+- Podcast artwork fallback: MiniPlayer now shows podcast cover when the episode has no artwork
 
 ### Fixed
+- MiniPlayer now falls back to podcast cover art when the played episode has no image of its own
+- Audio stays paused when playing a new episode after pausing the previous one (mpv retains pause state across `loadfile`; polling thread's transition false no longer triggers `playNext()`)
+- Podcast detail page unsubscribe button now correctly removes the podcast from the subscription list (was refreshing the database but not the in-memory list)
 - Navigate to other sidebar tabs no longer blocked when inside podcast episode list
 - Infinite loading spinner when RSS fetch fails in PodcastDetailScreen
 - iTunes lookup URL (`itunes-lookup:`) causing HTTP error during episode refresh — now resolved to real feed URL at subscribe time
