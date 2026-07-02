@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import app.podiumpodcasts.podium.data.AppDatabase
 import app.podiumpodcasts.podium.manager.SubscriptionManager
 import app.podiumpodcasts.podium.ui.theme.PodiumTheme
+import app.podiumpodcasts.podium.utils.Strings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -44,30 +45,30 @@ class DiscoverScreenTest {
     fun testDiscoverScreenDisplaysTitle() {
         composeTestRule.setContent {
             PodiumTheme {
-                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {})
+                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {}, onPlayLatestEpisode = {}, onShowDetail = {})
             }
         }
-        composeTestRule.onNodeWithText("Discover").assertIsDisplayed()
+        composeTestRule.onNodeWithText(Strings["discover_title"]).assertIsDisplayed()
     }
 
     @Test
     fun testDiscoverScreenShowsSubtitle() {
         composeTestRule.setContent {
             PodiumTheme {
-                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {})
+                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {}, onPlayLatestEpisode = {}, onShowDetail = {})
             }
         }
-        composeTestRule.onNodeWithText("Curated podcasts, handpicked for you.").assertIsDisplayed()
+        composeTestRule.onNodeWithText(Strings["discover_subtitle"]).assertIsDisplayed()
     }
 
     @Test
     fun testDiscoverScreenHasSearchField() {
         composeTestRule.setContent {
             PodiumTheme {
-                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {})
+                DiscoverScreen(database = database, subscriptionManager = subscriptionManager, onSubscribed = {}, onBack = {}, onPlayLatestEpisode = {}, onShowDetail = {})
             }
         }
-        composeTestRule.onNodeWithText("Search podcasts, episodes, topics...").assertIsDisplayed()
+        composeTestRule.onNodeWithText(Strings["discover_search_placeholder"]).assertIsDisplayed()
     }
 
 }

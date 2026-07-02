@@ -65,7 +65,7 @@ class SettingsScreenTest {
                 SettingsScreen(database = database, onBack = {})
             }
         }
-        composeTestRule.onNodeWithText("Podium - Podcast Player").assertIsDisplayed()
+        composeTestRule.onNodeWithText(Strings["settings_about_desc"]).assertIsDisplayed()
     }
 
     @Test

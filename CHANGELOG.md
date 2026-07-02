@@ -29,6 +29,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Podcast artwork fallback: MiniPlayer now shows podcast cover when the episode has no artwork
 
 ### Fixed
+- DiscoverScreenTest compilation failure: missing `onPlayLatestEpisode` and `onShowDetail` parameters from FeaturedCard buttons rewrite
+- Tests now use `Strings[...]` instead of hardcoded English text, making them locale-independent (fixes failures when system language is set to Chinese)
+- `AppGUITest.testSettingsScreenAppName` and `SettingsScreenTest.testSettingsAppName` now use `Strings["settings_about_desc"]` instead of the raw English string
 - MiniPlayer now falls back to podcast cover art when the played episode has no image of its own
 - Audio stays paused when playing a new episode after pausing the previous one (mpv retains pause state across `loadfile`; polling thread's transition false no longer triggers `playNext()`)
 - Podcast detail page unsubscribe button now correctly removes the podcast from the subscription list (was refreshing the database but not the in-memory list)
