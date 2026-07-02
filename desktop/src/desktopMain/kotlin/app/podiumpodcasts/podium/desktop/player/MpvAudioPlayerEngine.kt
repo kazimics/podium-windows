@@ -146,6 +146,7 @@ class MpvAudioPlayerEngine : AudioPlayerEngine {
         }
 
         MpvApi.command(mpvHandle, "loadfile", url, "replace")
+        MpvApi.INSTANCE.mpv_set_property_string(mpvHandle, "pause", "no")
         MpvApi.INSTANCE.mpv_set_property_string(mpvHandle, "speed", speed.toString())
 
         if (startPositionMs > 0) {

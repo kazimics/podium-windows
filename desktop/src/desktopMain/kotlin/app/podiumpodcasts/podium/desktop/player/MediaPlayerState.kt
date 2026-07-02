@@ -45,6 +45,7 @@ class MediaPlayerState(
     var error by mutableStateOf<String?>(null)
         private set
     private var isUserPaused = false
+    private var pendingPlay = false
 
     var currentUrl by mutableStateOf<String?>(null)
         private set
@@ -70,8 +71,13 @@ class MediaPlayerState(
             Logger.d(TAG, "Play state changed: playing=$playing")
             isPlaying = playing
             isLoading = false
-            if (!playing && !isUserPaused) {
-                playNext()
+            if (!playing) {
+                if (pendingPlay) {
+                    // Ignore transition false triggered by polling thread right after play()
+                    pendingPlay = false
+                } else if (!isUserPaused) {
+                    playNext()
+                }
             }
         }
         player.onPositionChanged = { pos, dur ->
@@ -104,6 +110,7 @@ class MediaPlayerState(
         }
 
         player.play(url, durationMs = durationMs)
+        pendingPlay = true
     }
 
     fun playFromQueue(index: Int) {
